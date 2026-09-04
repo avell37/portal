@@ -13,6 +13,7 @@ import {
     AuthInfo,
     AuthLabel,
     AuthLogo,
+    AuthPasswordStrength,
     AuthSubtitle,
 } from "@/shared/ui";
 
@@ -21,12 +22,18 @@ const emailSchema = z.object({
 });
 type EmailForm = z.infer<typeof emailSchema>;
 
-const passwordSchema = z.object({
-    password: z
-        .string()
-        .min(1, "Введите новый пароль")
-        .min(4, "Пароль должен быть не короче 4 символов"),
-});
+const passwordSchema = z
+    .object({
+        password: z
+            .string()
+            .min(1, "Введите новый пароль")
+            .min(4, "Пароль должен быть не короче 4 символов"),
+        confirmPassword: z.string().min(1, "Подтвердите новый пароль"),
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+        message: "Пароли не совпадают",
+        path: ["confirmPassword"],
+    });
 type PasswordForm = z.infer<typeof passwordSchema>;
 
 export default function ForgotPasswordPage() {
@@ -36,12 +43,12 @@ export default function ForgotPasswordPage() {
         "email",
     );
     const [email, setEmail] = useState("");
-
     const emailForm = useForm<EmailForm>({
         resolver: zodResolver(emailSchema),
     });
     const passwordForm = useForm<PasswordForm>({
         resolver: zodResolver(passwordSchema),
+        mode: "onChange",
     });
 
     function handleFindAccount(data: EmailForm) {
@@ -89,10 +96,10 @@ export default function ForgotPasswordPage() {
     if (step === "new-password") {
         return (
             <AuthLayout>
-                <AuthLogo />
+                <AuthBackLink />
                 <AuthHeading>Новый пароль</AuthHeading>
                 <AuthSubtitle>
-                    Придумай новый пароль для аккаунта {email}
+                    Придумай надежный пароль для вашего аккаунта
                 </AuthSubtitle>
 
                 <form
@@ -100,19 +107,42 @@ export default function ForgotPasswordPage() {
                     noValidate
                     className="max-w-[500px] space-y-4"
                 >
+                    <div>
+                        <AuthField
+                            label="Новый пароль"
+                            type="password"
+                            icon="lock"
+                            error={
+                                passwordForm.formState.errors.password
+                                    ?.message
+                            }
+                            {...passwordForm.register("password")}
+                        />
+                        <AuthPasswordStrength
+                            password={passwordForm.watch("password") ?? ""}
+                        />
+                    </div>
                     <AuthField
-                        label="Новый пароль"
+                        label="Подтвердите новый пароль"
                         type="password"
                         icon="lock"
-                        error={passwordForm.formState.errors.password?.message}
-                        {...passwordForm.register("password")}
+                        error={
+                            passwordForm.formState.errors.confirmPassword
+                                ?.message
+                        }
+                        {...passwordForm.register("confirmPassword")}
                     />
                     {passwordForm.formState.errors.root && (
                         <p className="text-[13px] font-medium text-auth-error">
                             {passwordForm.formState.errors.root.message}
                         </p>
                     )}
-                    <AuthButton disabled={passwordForm.formState.isSubmitting}>
+                    <AuthButton
+                        disabled={
+                            !passwordForm.formState.isValid ||
+                            passwordForm.formState.isSubmitting
+                        }
+                    >
                         Сохранить пароль
                     </AuthButton>
                 </form>

@@ -8,6 +8,7 @@ import { ROLES, DEMO_USERS } from "@/entities/user";
 import {
     AuthLayout,
     AuthButton,
+    AuthCheckbox,
     AuthField,
     AuthHeading,
     AuthLogo,
@@ -36,7 +37,7 @@ export default function LoginPage() {
         register,
         handleSubmit,
         setError,
-        formState: { errors, isSubmitting },
+        formState: { errors, isSubmitting, isValid },
     } = useForm<LoginForm>({ resolver: zodResolver(loginSchema) });
 
     function onSubmit(data: LoginForm) {
@@ -125,13 +126,7 @@ export default function LoginPage() {
                 )}
 
                 <div className="flex items-center justify-between pb-3 pt-1">
-                    <label className="flex cursor-pointer items-center gap-2.5 text-[13px] font-medium text-auth-black">
-                        <input
-                            type="checkbox"
-                            className="h-[19px] w-[19px] rounded-[3px] accent-auth-primary"
-                        />
-                        Запомнить меня
-                    </label>
+                    <AuthCheckbox label="Запомнить меня" />
                     <Link
                         to="/forgot-password"
                         className="text-[13px] font-bold text-auth-button"
@@ -140,7 +135,9 @@ export default function LoginPage() {
                     </Link>
                 </div>
 
-                <AuthButton disabled={isSubmitting}>Войти</AuthButton>
+                <AuthButton disabled={isSubmitting || !isValid}>
+                    Войти
+                </AuthButton>
             </form>
         </AuthLayout>
     );
