@@ -9,6 +9,8 @@ export {
     AuthHeading,
     AuthSubtitle,
     AuthField,
+    AuthCheckbox,
+    AuthPasswordStrength,
     AuthButton,
     AuthInfo,
 } from "./auth/AuthLayout";

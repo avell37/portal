@@ -19,10 +19,12 @@ export default function AuthLayout({
     children,
     minHeight,
     footer,
+    withBack,
 }: {
     children: ReactNode;
     minHeight?: number;
     footer?: ReactNode;
+    withBack?: boolean;
 }) {
     return (
         <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-auth-bg px-4 py-8">
@@ -66,7 +68,7 @@ export function AuthBackLink({
     return (
         <Link
             to={to}
-            className="mb-6 inline-flex items-center gap-2 font-sans text-[13px] font-medium leading-[100%] tracking-[0%] text-auth-gray transition-opacity hover:opacity-70 lg:mt-[-59px] lg:w-[400px]"
+            className="mb-[108px] inline-flex items-center gap-2 font-sans text-[13px] font-medium leading-[100%] tracking-[0%] text-auth-gray transition-opacity hover:opacity-70 lg:mt-[-59px] lg:w-[400px]"
         >
             <img src={arrowLeftIcon} alt="" width={12} height={16} />
             {children}
@@ -104,14 +106,12 @@ const FIELD_ICONS = {
     lock: { src: lockIcon, width: 14, height: 17, left: 14 },
 } as const;
 
-interface AuthFieldProps
-    extends Omit<
-        InputHTMLAttributes<HTMLInputElement>,
-        "className" | "placeholder"
-    > {
+interface AuthFieldProps extends Omit<
+    InputHTMLAttributes<HTMLInputElement>,
+    "className" | "placeholder"
+> {
     label: string;
     icon?: keyof typeof FIELD_ICONS;
-    /** Field-level validation message (e.g. from react-hook-form + zod). Renders in red under the field. */
     error?: string;
 }
 
@@ -152,7 +152,9 @@ export const AuthField = forwardRef<HTMLInputElement, AuthFieldProps>(
                         <button
                             type="button"
                             onClick={() => setReveal((v) => !v)}
-                            aria-label={reveal ? "Скрыть пароль" : "Показать пароль"}
+                            aria-label={
+                                reveal ? "Скрыть пароль" : "Показать пароль"
+                            }
                             aria-pressed={reveal}
                             className="absolute right-4 top-1/2 -translate-y-1/2 opacity-100 transition-opacity hover:opacity-70 lg:right-[14px]"
                         >
@@ -175,6 +177,106 @@ export const AuthField = forwardRef<HTMLInputElement, AuthFieldProps>(
         );
     },
 );
+
+export const AuthCheckbox = forwardRef<
+    HTMLInputElement,
+    Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "className"> & {
+        label: ReactNode;
+    }
+>(function AuthCheckbox(
+    { label, checked, defaultChecked, onChange, ...rest },
+    ref,
+) {
+    const isControlled = checked !== undefined;
+    const [uncontrolledChecked, setUncontrolledChecked] =
+        useState(!!defaultChecked);
+    const isChecked = isControlled ? checked : uncontrolledChecked;
+
+    return (
+        <label className="inline-flex cursor-pointer items-center gap-2.5 text-[13px] font-medium text-auth-black">
+            <input
+                ref={ref}
+                type="checkbox"
+                checked={isControlled ? checked : undefined}
+                defaultChecked={isControlled ? undefined : defaultChecked}
+                onChange={(e) => {
+                    if (!isControlled) setUncontrolledChecked(e.target.checked);
+                    onChange?.(e);
+                }}
+                className="sr-only"
+                {...rest}
+            />
+            <span
+                className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-[8px] border transition-colors ${
+                    isChecked
+                        ? "border-auth-primary bg-auth-primary"
+                        : "border-auth-border bg-white"
+                }`}
+            >
+                {isChecked && (
+                    <svg width="12" height="9" viewBox="0 0 12 9" fill="none">
+                        <path
+                            d="M1 4.5L4.2 7.5L11 1"
+                            stroke="white"
+                            strokeWidth="1.7"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                        />
+                    </svg>
+                )}
+            </span>
+            {label}
+        </label>
+    );
+});
+
+const STRENGTH_LEVELS = [
+    { label: "Слабый", color: "var(--color-red)" },
+    { label: "Средний", color: "var(--color-amber)" },
+    { label: "Надёжный", color: "var(--color-green)" },
+] as const;
+
+function getPasswordScore(password: string) {
+    if (!password) return 0;
+    let rules = 0;
+    if (password.length >= 8) rules++;
+    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) rules++;
+    if (/\d/.test(password)) rules++;
+    if (/[^a-zA-Z0-9]/.test(password)) rules++;
+    return Math.min(rules, 3);
+}
+
+export function AuthPasswordStrength({ password }: { password: string }) {
+    if (!password) return null;
+    const score = getPasswordScore(password);
+    const filled = Math.max(score, 1);
+    const level = STRENGTH_LEVELS[Math.max(score - 1, 0)];
+
+    return (
+        <div className="mt-2.5 w-full max-w-[500px]">
+            <div className="flex gap-1.5">
+                {[0, 1, 2].map((i) => (
+                    <span
+                        key={i}
+                        className="h-1.5 flex-1 rounded-full transition-colors"
+                        style={{
+                            background:
+                                i < filled
+                                    ? level.color
+                                    : "var(--color-border)",
+                        }}
+                    />
+                ))}
+            </div>
+            <p
+                className="mt-1.5 text-[13px] font-medium leading-[100%] tracking-[0%]"
+                style={{ color: level.color }}
+            >
+                {level.label}
+            </p>
+        </div>
+    );
+}
 
 export function AuthButton({
     children,
