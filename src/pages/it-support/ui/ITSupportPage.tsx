@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { CoverHeader, StatCard } from '@/shared/ui'
+import { Download, Send, Wrench } from 'lucide-react'
+import { StatCard } from '@/shared/ui'
 import { useAuth } from '@/entities/session'
 
 type Status = 'Новая' | 'В работе' | 'Выполнено' | 'Отклонена'
@@ -63,8 +64,10 @@ export default function ITSupportPage() {
 
   return (
     <div>
-      <CoverHeader tag="Внутренний портал колледжа" title="IT-поддержка" subtitle="Заявки на ремонт · Установка ПО · Статусы" />
-      <div className="mx-auto max-w-5xl space-y-6 px-6 py-8">
+      <h1 className="text-[22px] font-semibold text-auth-black">IT-поддержка</h1>
+      <p className="mt-1 text-[14px] text-auth-gray">Заявки на ремонт · Установка ПО · Статусы</p>
+
+      <div className="mt-6 space-y-6">
         {isAdmin && (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             <StatCard value={tickets.length} label="Всего заявок" color="var(--color-amber)" />
@@ -75,22 +78,26 @@ export default function ITSupportPage() {
         )}
 
         {!isAdmin && (
-          <div className="rounded-xl border border-border bg-blue-light p-5">
-            <div className="mb-3 text-[13px] font-semibold text-blue">Создать заявку</div>
+          <div className="rounded-[20px] border border-border bg-blue-light p-5">
+            <div className="mb-3 text-[14px] font-semibold text-blue">Создать заявку</div>
             <div className="grid gap-3 sm:grid-cols-[160px_1fr_auto]">
               <input
-                className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-blue"
+                className="rounded-[14px] border border-border bg-white px-3.5 py-2.5 text-[14px] outline-none focus:border-auth-primary"
                 placeholder="Аудитория"
                 value={room}
                 onChange={(e) => setRoom(e.target.value)}
               />
               <input
-                className="rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-blue"
+                className="rounded-[14px] border border-border bg-white px-3.5 py-2.5 text-[14px] outline-none focus:border-auth-primary"
                 placeholder="Описание проблемы"
                 value={detail}
                 onChange={(e) => setDetail(e.target.value)}
               />
-              <button onClick={submitTicket} className="rounded-md bg-blue px-4 py-2 text-sm font-semibold text-white hover:opacity-90">
+              <button
+                onClick={submitTicket}
+                className="flex items-center justify-center gap-2 rounded-[14px] bg-auth-primary px-4 py-2.5 text-[14px] font-semibold text-white transition-opacity hover:opacity-90"
+              >
+                <Send size={16} />
                 Отправить
               </button>
             </div>
@@ -103,8 +110,8 @@ export default function ITSupportPage() {
               <button
                 key={f}
                 onClick={() => setFilter(f)}
-                className={`rounded-full px-3 py-1.5 text-[12px] font-semibold transition-colors ${
-                  filter === f ? 'bg-purple text-white' : 'bg-gray-light text-gray hover:opacity-80'
+                className={`rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition-colors ${
+                  filter === f ? 'bg-auth-primary text-white' : 'bg-gray-light text-gray hover:opacity-80'
                 }`}
               >
                 {f}
@@ -114,17 +121,17 @@ export default function ITSupportPage() {
 
           <div className="space-y-2">
             {visible.map((t) => (
-              <div key={t.id} className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-white p-3.5">
+              <div key={t.id} className="flex flex-wrap items-center gap-3 rounded-[16px] border border-border bg-white p-4">
                 <span
-                  className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] ${
                     t.type === 'Неисправность' ? 'bg-red-light text-red' : 'bg-blue-light text-blue'
                   }`}
                 >
-                  {t.type}
+                  {t.type === 'Неисправность' ? <Wrench size={16} /> : <Download size={16} />}
                 </span>
                 <div className="min-w-40 flex-1">
-                  <div className="text-[13px] font-semibold text-ink">{t.room}</div>
-                  <div className="mt-0.5 text-[11px] text-ink-faint">{t.author} · {t.detail}</div>
+                  <div className="text-[14px] font-semibold text-auth-black">{t.room}</div>
+                  <div className="mt-0.5 text-[12px] text-auth-gray">{t.author} · {t.detail}</div>
                 </div>
                 <button
                   onClick={() => isAdmin && cycleStatus(t.id)}
@@ -133,10 +140,10 @@ export default function ITSupportPage() {
                 >
                   {t.status}
                 </button>
-                <span className="text-[11px] text-ink-faint">{t.date}</span>
+                <span className="text-[12px] text-auth-gray">{t.date}</span>
               </div>
             ))}
-            {visible.length === 0 && <div className="py-8 text-center text-sm text-ink-faint">Заявок нет</div>}
+            {visible.length === 0 && <div className="py-8 text-center text-[14px] text-auth-gray">Заявок нет</div>}
           </div>
         </div>
       </div>
