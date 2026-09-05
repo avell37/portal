@@ -1,4 +1,3 @@
-import { CoverHeader } from '@/shared/ui'
 import { useAuth } from '@/entities/session'
 
 export default function StudentPage() {
@@ -6,16 +5,13 @@ export default function StudentPage() {
 
   return (
     <div>
-      <CoverHeader tag="Внутренний портал колледжа" title="Личный кабинет" subtitle={`Добро пожаловать, ${currentUser?.fullName ?? ''}`} />
-      <div className="mx-auto max-w-3xl space-y-4 px-6 py-8">
-        <div className="rounded-lg border border-border bg-white p-4">
-          <div className="mb-1 text-[13px] font-semibold text-ink">Пересдачи</div>
-          <div className="text-[13px] text-ink-muted">Активных пересдач нет.</div>
-        </div>
-        <div className="rounded-lg border border-border bg-white p-4">
-          <div className="mb-1 text-[13px] font-semibold text-ink">Заявки в IT-поддержку</div>
-          <div className="text-[13px] text-ink-muted">Вы ещё не подавали заявок.</div>
-        </div>
+      <h1 className="text-[22px] font-semibold text-auth-black">Главная</h1>
+      <p className="mt-1 text-[14px] text-auth-gray">
+        Добро пожаловать, {currentUser?.fullName ?? ''}
+      </p>
+
+      <div className="mt-8 flex h-64 items-center justify-center rounded-[20px] border border-dashed border-border bg-white text-[14px] text-auth-gray">
+        Дашборд скоро появится здесь
       </div>
     </div>
   )
