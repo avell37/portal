@@ -24,14 +24,14 @@ export default function StudentLayout() {
 
     return (
         <div className="flex min-h-screen bg-auth-bg">
-            <aside className="flex w-60 shrink-0 flex-col bg-white px-4 py-5">
+            <aside className="flex w-60 shrink-0 flex-col bg-auth-bg px-4 py-5">
                 <div className="mb-8 flex items-center px-2">
                     <img
                         src={logo}
                         alt="IThub"
-                        width={104}
-                        height={40}
-                        className="h-8 w-auto"
+                        width={167}
+                        height={64}
+                        className="h-16 mr-auto w-auto"
                     />
                 </div>
 
@@ -64,7 +64,11 @@ export default function StudentLayout() {
                                         >
                                             <Icon
                                                 size={16}
-                                                color={isActive ? "white" : badge.fg}
+                                                color={
+                                                    isActive
+                                                        ? "white"
+                                                        : badge.fg
+                                                }
                                             />
                                         </span>
                                         {item.label}
