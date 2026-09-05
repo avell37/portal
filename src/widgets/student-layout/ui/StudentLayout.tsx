@@ -82,7 +82,7 @@ export default function StudentLayout() {
 
             <div className="flex min-w-0 flex-1 flex-col bg-auth-bg">
                 <AppTopbar />
-                <main className="flex-1 overflow-y-auto bg-white p-8">
+                <main className="flex-1 overflow-y-auto bg-white p-8 rounded-xl">
                     <Outlet />
                 </main>
             </div>
