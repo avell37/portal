@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { CoverHeader } from '@/shared/ui'
 
 type Zone = 'red' | 'yellow' | 'green'
 interface Student {
@@ -40,18 +39,16 @@ export default function VospitatelniyPage() {
     const meta = ZONE_META[selected.zone]
     return (
       <div>
-        <CoverHeader tag="Внутренний портал колледжа" title="Карточка студента" subtitle="Успеваемость · История бесед" />
-        <div className="mx-auto max-w-3xl px-6 py-8">
-          <button onClick={() => setSelected(null)} className="mb-4 text-[12px] font-semibold text-purple">← Вернуться к списку</button>
-          <div className="rounded-lg bg-purple p-4 text-white">
-            <div className="text-base font-bold">{selected.name}</div>
-            <div className="mt-1 text-[12px] opacity-70">Зона: <span style={{ color: meta.scoreColor }}>{meta.label}</span></div>
-          </div>
-          <div className="mt-4 rounded-lg border border-border bg-white p-4">
-            <div className="mb-2 text-[11px] font-semibold uppercase text-ink-faint">История бесед</div>
-            <div className="text-[13px] text-ink-muted">Бесед пока не зафиксировано.</div>
-            <button className="mt-3 rounded-md bg-teal px-3 py-2 text-[12px] font-semibold text-white">Добавить запись о беседе</button>
-          </div>
+        <button onClick={() => setSelected(null)} className="mb-4 text-[12px] font-semibold text-auth-primary">← Вернуться к списку</button>
+
+        <div className="rounded-[16px] bg-auth-primary p-4 text-white">
+          <div className="text-base font-bold">{selected.name}</div>
+          <div className="mt-1 text-[12px] opacity-70">Зона: <span style={{ color: meta.scoreColor }}>{meta.label}</span></div>
+        </div>
+        <div className="mt-4 max-w-2xl rounded-[16px] border border-border bg-white p-4">
+          <div className="mb-2 text-[11px] font-semibold uppercase text-auth-gray">История бесед</div>
+          <div className="text-[13px] text-auth-gray">Бесед пока не зафиксировано.</div>
+          <button className="mt-3 rounded-[10px] bg-auth-primary px-3 py-2 text-[12px] font-semibold text-white transition-opacity hover:opacity-90">Добавить запись о беседе</button>
         </div>
       </div>
     )
@@ -59,13 +56,15 @@ export default function VospitatelniyPage() {
 
   return (
     <div>
-      <CoverHeader tag="Внутренний портал колледжа" title="Воспитательный отдел" subtitle="Сводка группы · Зоны успеваемости" />
-      <div className="mx-auto max-w-3xl px-6 py-8">
-        <div className="mb-4 flex flex-wrap gap-4 rounded-lg bg-gray-light px-4 py-2.5 text-[12px] text-ink-muted">
+      <h1 className="text-[22px] font-semibold text-auth-black">Воспитательный отдел</h1>
+      <p className="mt-1 text-[14px] text-auth-gray">Сводка группы · Зоны успеваемости</p>
+
+      <div className="mt-6 max-w-2xl">
+        <div className="mb-4 flex flex-wrap gap-4 rounded-[14px] bg-gray-light px-4 py-2.5 text-[12px] text-auth-gray">
           <span>Красных: <b className="text-red">{counts.red}</b></span>
           <span>Жёлтых: <b className="text-amber">{counts.yellow}</b></span>
           <span>Зелёных: <b className="text-green">{counts.green}</b></span>
-          <span>Всего: <b className="text-ink">{STUDENTS.length}</b></span>
+          <span>Всего: <b className="text-auth-black">{STUDENTS.length}</b></span>
         </div>
 
         <div className="mb-4 flex flex-wrap gap-2">
@@ -73,8 +72,8 @@ export default function VospitatelniyPage() {
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`rounded-full px-3 py-1.5 text-[12px] font-semibold ${
-                filter === f ? 'bg-purple text-white' : 'bg-white border border-border text-ink-muted'
+              className={`rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition-colors ${
+                filter === f ? 'bg-auth-primary text-white' : 'bg-gray-light text-gray hover:opacity-80'
               }`}
             >
               {f === 'all' ? 'Все' : ZONE_META[f].label}
@@ -89,11 +88,11 @@ export default function VospitatelniyPage() {
               <button
                 key={s.id}
                 onClick={() => setSelected(s)}
-                className="flex w-full items-center gap-3 rounded-lg border border-border bg-white p-3.5 text-left transition-colors hover:bg-gray-light"
+                className="flex w-full items-center gap-3 rounded-[16px] border border-border bg-white p-3.5 text-left transition-colors hover:bg-gray-light"
               >
                 <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: meta.color }} />
-                <span className="min-w-40 text-[13px] font-semibold text-ink">{s.name}</span>
-                <span className="flex-1 text-[12px] text-ink-faint">Средний % по КТ: {s.avg}%</span>
+                <span className="min-w-40 text-[13px] font-semibold text-auth-black">{s.name}</span>
+                <span className="flex-1 text-[12px] text-auth-gray">Средний % по КТ: {s.avg}%</span>
                 <span className="rounded-full px-2.5 py-1 text-[11px] font-medium" style={{ background: meta.bg, color: meta.color }}>
                   {s.redSubjects} красных предм.
                 </span>
