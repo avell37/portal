@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { CoverHeader, StatCard, Panel, PanelRow } from '@/shared/ui'
+import { StatCard, Panel, PanelRow } from '@/shared/ui'
 
 const TABS = [
   { id: 'summary', label: 'Общая сводка' },
@@ -15,15 +15,17 @@ export default function DirectorPage() {
 
   return (
     <div>
-      <CoverHeader tag="Внутренний портал колледжа" title="Дашборд директора" subtitle="Сводная аналитика · Три отдела · Архив по семестрам" />
-      <div className="mx-auto max-w-5xl px-6 py-8">
+      <h1 className="text-[22px] font-semibold text-auth-black">Дашборд директора</h1>
+      <p className="mt-1 text-[14px] text-auth-gray">Сводная аналитика · Три отдела · Архив по семестрам</p>
+
+      <div className="mt-6">
         <div className="mb-4 flex flex-wrap gap-2">
           {TABS.map((t) => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`rounded-full px-4 py-2 text-[13px] font-semibold transition-colors ${
-                tab === t.id ? 'bg-purple text-white' : 'bg-white text-ink-muted border border-border hover:bg-gray-light'
+              className={`rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition-colors ${
+                tab === t.id ? 'bg-auth-primary text-white' : 'bg-gray-light text-gray hover:opacity-80'
               }`}
             >
               {t.label}
