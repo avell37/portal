@@ -2,6 +2,8 @@ export { default as CoverHeader } from "./CoverHeader";
 export { default as Panel, PanelRow } from "./Panel";
 export { default as StatCard } from "./StatCard";
 export { default as PlaceholderPage } from "./PlaceholderPage";
+export { BarChart, StackedBarChart } from "./charts";
+export type { BarChartItem, StackedBarSegment, StackedBarRow } from "./charts";
 export {
     default as AuthLayout,
     AuthBackLink,

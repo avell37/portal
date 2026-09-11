@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { CONTINGENT, CONTINGENT_PERIODS } from '@/entities/metrics'
+import { BarChart } from '@/shared/ui'
 
 const LATEST_PERIOD_WITH_DATA = [...CONTINGENT_PERIODS].reverse().find((p) => CONTINGENT.some((r) => r.period === p && r.avgGrade !== null)) ?? CONTINGENT_PERIODS[0]!
 
@@ -21,6 +22,36 @@ export default function UchebnyPage() {
     const retakes = retakeRows.reduce((sum, r) => sum + (r.retakes ?? 0), 0)
     return { count, expelled, transfers, academicLeave, retakes }
   }, [rows])
+
+  const byDirection = useMemo(() => {
+    const map = new Map<string, { count: number; attendanceSum: number; attendanceWeight: number }>()
+    for (const r of rows) {
+      const cur = map.get(r.direction) ?? { count: 0, attendanceSum: 0, attendanceWeight: 0 }
+      cur.count += r.count
+      if (r.attendance !== null) {
+        cur.attendanceSum += r.attendance * r.count
+        cur.attendanceWeight += r.count
+      }
+      map.set(r.direction, cur)
+    }
+    return Array.from(map.entries()).map(([direction, v]) => ({
+      direction,
+      count: v.count,
+      attendance: v.attendanceWeight ? Math.round(v.attendanceSum / v.attendanceWeight) : null,
+    }))
+  }, [rows])
+
+  const countChart = useMemo(
+    () => byDirection.map((d) => ({ label: d.direction, value: d.count, color: 'var(--color-auth-primary)' })),
+    [byDirection],
+  )
+  const attendanceChart = useMemo(
+    () =>
+      byDirection
+        .filter((d) => d.attendance !== null)
+        .map((d) => ({ label: d.direction, value: d.attendance!, color: 'var(--color-blue)' })),
+    [byDirection],
+  )
 
   return (
     <div>
@@ -49,6 +80,21 @@ export default function UchebnyPage() {
           <span>Академ. отпусков: <b className="text-auth-black">{totals.academicLeave}</b></span>
           <span>Пересдач всего: <b className="text-auth-black">{totals.retakes}</b></span>
         </div>
+
+        {countChart.length > 0 && (
+          <div className="mb-4 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-[16px] border border-border bg-white p-4">
+              <div className="mb-3 text-[12px] font-semibold uppercase text-auth-gray">Студентов по направлениям</div>
+              <BarChart items={countChart} />
+            </div>
+            {attendanceChart.length > 0 && (
+              <div className="rounded-[16px] border border-border bg-white p-4">
+                <div className="mb-3 text-[12px] font-semibold uppercase text-auth-gray">Посещаемость по направлениям</div>
+                <BarChart items={attendanceChart} formatValue={(v) => `${v}%`} />
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="overflow-x-auto rounded-[16px] border border-border bg-white">
           <table className="w-full text-left text-[13px]">
