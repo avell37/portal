@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { CONTINGENT, CONTINGENT_PERIODS } from '@/entities/metrics'
-import { BarChart } from '@/shared/ui'
+import { ColumnChart, TrendLineChart } from '@/shared/ui'
 
 const LATEST_PERIOD_WITH_DATA = [...CONTINGENT_PERIODS].reverse().find((p) => CONTINGENT.some((r) => r.period === p && r.avgGrade !== null)) ?? CONTINGENT_PERIODS[0]!
 
@@ -41,17 +41,25 @@ export default function UchebnyPage() {
     }))
   }, [rows])
 
-  const countChart = useMemo(
-    () => byDirection.map((d) => ({ label: d.direction, value: d.count, color: 'var(--color-auth-primary)' })),
+  const directionLabels = byDirection.map((d) => d.direction)
+  const countSeries = useMemo(
+    () => [{ label: 'Студентов', color: '#9a33f4', values: byDirection.map((d) => d.count) }],
     [byDirection],
   )
-  const attendanceChart = useMemo(
-    () =>
-      byDirection
-        .filter((d) => d.attendance !== null)
-        .map((d) => ({ label: d.direction, value: d.attendance!, color: 'var(--color-blue)' })),
+  const attendanceSeries = useMemo(
+    () => [{ label: 'Посещаемость', color: '#185fa5', values: byDirection.map((d) => d.attendance ?? 0) }],
     [byDirection],
   )
+  const hasAttendance = byDirection.some((d) => d.attendance !== null)
+
+  const retakesTrend = useMemo(() => {
+    const points = CONTINGENT_PERIODS.map((p) => {
+      const periodRows = CONTINGENT.filter((r) => r.period === p && r.retakes !== null)
+      if (periodRows.length === 0) return null
+      return { period: p, value: periodRows.reduce((s, r) => s + (r.retakes ?? 0), 0) }
+    }).filter((x): x is { period: string; value: number } => x !== null)
+    return points
+  }, [])
 
   return (
     <div>
@@ -81,18 +89,25 @@ export default function UchebnyPage() {
           <span>Пересдач всего: <b className="text-auth-black">{totals.retakes}</b></span>
         </div>
 
-        {countChart.length > 0 && (
+        {directionLabels.length > 0 && (
           <div className="mb-4 grid gap-3 sm:grid-cols-2">
             <div className="rounded-[16px] border border-border bg-white p-4">
               <div className="mb-3 text-[12px] font-semibold uppercase text-auth-gray">Студентов по направлениям</div>
-              <BarChart items={countChart} />
+              <ColumnChart categories={directionLabels} series={countSeries} height={180} />
             </div>
-            {attendanceChart.length > 0 && (
+            {hasAttendance && (
               <div className="rounded-[16px] border border-border bg-white p-4">
                 <div className="mb-3 text-[12px] font-semibold uppercase text-auth-gray">Посещаемость по направлениям</div>
-                <BarChart items={attendanceChart} formatValue={(v) => `${v}%`} />
+                <ColumnChart categories={directionLabels} series={attendanceSeries} height={180} formatValue={(v) => `${v}%`} />
               </div>
             )}
+          </div>
+        )}
+
+        {retakesTrend.length > 1 && (
+          <div className="mb-4 rounded-[16px] border border-border bg-white p-4">
+            <div className="mb-3 text-[12px] font-semibold uppercase text-auth-gray">Пересдачи по семестрам</div>
+            <TrendLineChart labels={retakesTrend.map((p) => p.period)} values={retakesTrend.map((p) => p.value)} color="#a32d2d" height={200} />
           </div>
         )}
 

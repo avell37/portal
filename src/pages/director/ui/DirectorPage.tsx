@@ -1,12 +1,8 @@
 import { useMemo, useState } from 'react'
-import { StatCard, Panel, PanelRow, StackedBarChart, BarChart } from '@/shared/ui'
+import { StatCard, Panel, PanelRow, DonutChart, ColumnChart, TrendLineChart } from '@/shared/ui'
 import { CONTINGENT, CONTINGENT_PERIODS, CURATOR_ZONES, CURATOR_ZONE_PERIODS, TEACHER_SOP, EMPLOYER_FEEDBACK } from '@/entities/metrics'
 
-const ZONE_SEGMENTS = [
-  { key: 'risk', label: 'Зона риска', color: 'var(--color-red)' },
-  { key: 'attention', label: 'Зона внимания', color: 'var(--color-amber)' },
-  { key: 'development', label: 'Зона развития', color: 'var(--color-green)' },
-]
+const ZONE_COLORS = { risk: '#a32d2d', attention: '#854f0b', development: '#3b6d11' }
 
 const TABS = [
   { id: 'summary', label: 'Общая сводка' },
@@ -58,15 +54,28 @@ export default function DirectorPage() {
     })
   }, [curatorRows])
 
-  const zoneChartRows = useMemo(
-    () => curatorByDirection.map((d) => ({ label: d.direction, values: { risk: d.risk, attention: d.attention, development: d.development } })),
-    [curatorByDirection],
+  const zoneSlices = useMemo(
+    () => [
+      { label: 'Зона риска', value: curatorTotals.risk, color: ZONE_COLORS.risk },
+      { label: 'Зона внимания', value: curatorTotals.attention, color: ZONE_COLORS.attention },
+      { label: 'Зона развития', value: curatorTotals.development, color: ZONE_COLORS.development },
+    ],
+    [curatorTotals],
+  )
+
+  const riskTrend = useMemo(
+    () =>
+      CURATOR_ZONE_PERIODS.map((p) => ({
+        period: p,
+        value: CURATOR_ZONES.filter((r) => r.period === p).reduce((s, r) => s + r.risk, 0),
+      })),
+    [],
   )
 
   const contingentByDirection = useMemo(() => {
     const map = new Map<string, number>()
     for (const r of contingentRows) map.set(r.direction, (map.get(r.direction) ?? 0) + r.count)
-    return Array.from(map.entries()).map(([direction, count]) => ({ label: direction, value: count, color: 'var(--color-auth-primary)' }))
+    return Array.from(map.entries())
   }, [contingentRows])
 
   const criticalTeachers = useMemo(() => TEACHER_SOP.filter((t) => t.interest <= 3 || t.delivery <= 3 || t.feedback <= 3 || t.comfort <= 3), [])
@@ -112,8 +121,8 @@ export default function DirectorPage() {
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="rounded-[16px] border border-border bg-white p-4">
-                <div className="mb-3 text-[12px] font-semibold uppercase text-auth-gray">Зоны по направлениям</div>
-                <StackedBarChart segments={ZONE_SEGMENTS} rows={zoneChartRows} />
+                <div className="mb-3 text-[12px] font-semibold uppercase text-auth-gray">Состав зон</div>
+                <DonutChart slices={zoneSlices} />
               </div>
               <Panel title="Отзывы работодателей" titleColor="var(--color-teal)" bg="var(--color-teal-light)">
                 <PanelRow label="Средняя оценка" value={employerAvg} valueColor="var(--color-green)" />
@@ -122,6 +131,12 @@ export default function DirectorPage() {
                 ))}
               </Panel>
             </div>
+            {riskTrend.length > 1 && (
+              <div className="rounded-[16px] border border-border bg-white p-4">
+                <div className="mb-3 text-[12px] font-semibold uppercase text-auth-gray">Зона риска по семестрам</div>
+                <TrendLineChart labels={riskTrend.map((p) => p.period)} values={riskTrend.map((p) => p.value)} color={ZONE_COLORS.risk} height={180} />
+              </div>
+            )}
           </div>
         )}
 
@@ -143,7 +158,11 @@ export default function DirectorPage() {
             {contingentByDirection.length > 0 && (
               <div className="rounded-[16px] border border-border bg-white p-4">
                 <div className="mb-3 text-[12px] font-semibold uppercase text-auth-gray">Студентов по направлениям</div>
-                <BarChart items={contingentByDirection} />
+                <ColumnChart
+                  categories={contingentByDirection.map(([direction]) => direction)}
+                  series={[{ label: 'Студентов', color: '#9a33f4', values: contingentByDirection.map(([, count]) => count) }]}
+                  height={180}
+                />
               </div>
             )}
           </div>

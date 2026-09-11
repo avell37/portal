@@ -1,5 +1,7 @@
-export { default as BarChart } from './BarChart'
-export type { BarChartItem } from './BarChart'
+export { default as DonutChart } from './DonutChart'
+export type { DonutSlice } from './DonutChart'
 
-export { default as StackedBarChart } from './StackedBarChart'
-export type { StackedBarSegment, StackedBarRow } from './StackedBarChart'
+export { default as ColumnChart } from './ColumnChart'
+export type { ColumnSeries } from './ColumnChart'
+
+export { default as TrendLineChart } from './TrendLineChart'
