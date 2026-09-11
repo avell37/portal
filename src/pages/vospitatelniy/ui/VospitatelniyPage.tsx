@@ -1,5 +1,12 @@
 import { useMemo, useState } from 'react'
 import { CURATOR_ZONES, CURATOR_ZONE_PERIODS } from '@/entities/metrics'
+import { StackedBarChart } from '@/shared/ui'
+
+const ZONE_SEGMENTS = [
+  { key: 'risk', label: 'Зона риска', color: 'var(--color-red)' },
+  { key: 'attention', label: 'Зона внимания', color: 'var(--color-amber)' },
+  { key: 'development', label: 'Зона развития', color: 'var(--color-green)' },
+]
 
 export default function VospitatelniyPage() {
   const [period, setPeriod] = useState(CURATOR_ZONE_PERIODS[CURATOR_ZONE_PERIODS.length - 1]!)
@@ -13,6 +20,18 @@ export default function VospitatelniyPage() {
     const lateness = rows.reduce((sum, r) => sum + r.lateness, 0)
     const poorAttendance = rows.reduce((sum, r) => sum + r.poorAttendance, 0)
     return { risk, attention, development, lateness, poorAttendance, total: risk + attention + development }
+  }, [rows])
+
+  const byDirection = useMemo(() => {
+    const map = new Map<string, { risk: number; attention: number; development: number }>()
+    for (const r of rows) {
+      const cur = map.get(r.direction) ?? { risk: 0, attention: 0, development: 0 }
+      cur.risk += r.risk
+      cur.attention += r.attention
+      cur.development += r.development
+      map.set(r.direction, cur)
+    }
+    return Array.from(map.entries()).map(([direction, v]) => ({ label: direction, values: v as Record<string, number> }))
   }, [rows])
 
   return (
@@ -57,6 +76,13 @@ export default function VospitatelniyPage() {
             <div className="mt-1.5 text-[11px] opacity-80">Плохая посещаемость</div>
           </div>
         </div>
+
+        {byDirection.length > 0 && (
+          <div className="mb-4 rounded-[16px] border border-border bg-white p-4">
+            <div className="mb-3 text-[12px] font-semibold uppercase text-auth-gray">Зоны по направлениям</div>
+            <StackedBarChart segments={ZONE_SEGMENTS} rows={byDirection} />
+          </div>
+        )}
 
         <div className="overflow-x-auto rounded-[16px] border border-border bg-white">
           <table className="w-full text-left text-[13px]">
