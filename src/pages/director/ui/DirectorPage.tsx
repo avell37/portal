@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { StatCard, Panel, PanelRow } from '@/shared/ui'
+import { CONTINGENT, CONTINGENT_PERIODS, CURATOR_ZONES, CURATOR_ZONE_PERIODS, TEACHER_SOP, EMPLOYER_FEEDBACK } from '@/entities/metrics'
 
 const TABS = [
   { id: 'summary', label: 'Общая сводка' },
@@ -10,13 +11,55 @@ const TABS = [
 
 type TabId = (typeof TABS)[number]['id']
 
+const CONTINGENT_PERIOD = [...CONTINGENT_PERIODS].reverse().find((p) => CONTINGENT.some((r) => r.period === p && r.avgGrade !== null))!
+const CURATOR_PERIOD = CURATOR_ZONE_PERIODS.includes(CONTINGENT_PERIOD) ? CONTINGENT_PERIOD : CURATOR_ZONE_PERIODS[CURATOR_ZONE_PERIODS.length - 1]!
+
+function round1(v: number) {
+  return Math.round(v * 10) / 10
+}
+
 export default function DirectorPage() {
   const [tab, setTab] = useState<TabId>('summary')
+
+  const contingentRows = useMemo(() => CONTINGENT.filter((r) => r.period === CONTINGENT_PERIOD), [])
+  const curatorRows = useMemo(() => CURATOR_ZONES.filter((r) => r.period === CURATOR_PERIOD), [])
+
+  const contingentTotals = useMemo(() => ({
+    count: contingentRows.reduce((s, r) => s + r.count, 0),
+    expelled: contingentRows.reduce((s, r) => s + r.expelled, 0),
+    academicLeave: contingentRows.reduce((s, r) => s + r.academicLeave, 0),
+    retakes: contingentRows.reduce((s, r) => s + (r.retakes ?? 0), 0),
+  }), [contingentRows])
+
+  const curatorTotals = useMemo(() => ({
+    risk: curatorRows.reduce((s, r) => s + r.risk, 0),
+    attention: curatorRows.reduce((s, r) => s + r.attention, 0),
+    development: curatorRows.reduce((s, r) => s + r.development, 0),
+  }), [curatorRows])
+
+  const curatorByDirection = useMemo(() => {
+    const map = new Map<string, { risk: number; attention: number; development: number }>()
+    for (const r of curatorRows) {
+      const cur = map.get(r.direction) ?? { risk: 0, attention: 0, development: 0 }
+      cur.risk += r.risk
+      cur.attention += r.attention
+      cur.development += r.development
+      map.set(r.direction, cur)
+    }
+    return Array.from(map.entries()).map(([direction, v]) => {
+      const total = v.risk + v.attention + v.development
+      return { direction, ...v, developmentPct: total ? round1((v.development / total) * 100) : 0 }
+    })
+  }, [curatorRows])
+
+  const criticalTeachers = useMemo(() => TEACHER_SOP.filter((t) => t.interest <= 3 || t.delivery <= 3 || t.feedback <= 3 || t.comfort <= 3), [])
+  const teacherAvg = useMemo(() => round1(TEACHER_SOP.reduce((s, t) => s + t.overall, 0) / TEACHER_SOP.length), [])
+  const employerAvg = useMemo(() => round1(EMPLOYER_FEEDBACK.reduce((s, e) => s + e.score, 0) / EMPLOYER_FEEDBACK.length), [])
 
   return (
     <div>
       <h1 className="text-[22px] font-semibold text-auth-black">Дашборд директора</h1>
-      <p className="mt-1 text-[14px] text-auth-gray">Сводная аналитика · Три отдела · Архив по семестрам</p>
+      <p className="mt-1 text-[14px] text-auth-gray">Сводная аналитика · {CONTINGENT_PERIOD}</p>
 
       <div className="mt-6">
         <div className="mb-4 flex flex-wrap gap-2">
@@ -35,32 +78,32 @@ export default function DirectorPage() {
 
         {tab === 'summary' && (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <StatCard value={18} label="Студентов в красной зоне" color="var(--color-red)" />
+            <StatCard value={curatorTotals.risk} label="Студентов в зоне риска" color="var(--color-red)" />
             <StatCard value={38} label="Открытых IT-заявок" color="var(--color-amber)" />
-            <StatCard value={3} label="Преподавателей с флагами" color="var(--color-purple)" />
-            <StatCard value={24} label="Активных пересдач" color="var(--color-blue)" />
+            <StatCard value={criticalTeachers.length} label="Преподавателей с флагами" color="var(--color-purple)" />
+            <StatCard value={contingentTotals.retakes} label="Активных пересдач" color="var(--color-blue)" />
           </div>
         )}
 
         {tab === 'vosp' && (
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <StatCard value={96} label="Всего студентов" color="var(--color-teal)" />
-              <StatCard value={18} label="Красная зона" color="var(--color-red)" />
-              <StatCard value={24} label="Бесед проведено" color="var(--color-teal)" />
-              <StatCard value={7} label="Эскалаций" color="var(--color-amber)" />
+              <StatCard value={contingentTotals.count} label="Всего студентов" color="var(--color-teal)" />
+              <StatCard value={curatorTotals.risk} label="Зона риска" color="var(--color-red)" />
+              <StatCard value={curatorTotals.attention} label="Зона внимания" color="var(--color-amber)" />
+              <StatCard value={curatorTotals.development} label="Зона развития" color="var(--color-green)" />
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <Panel title="По направлениям" titleColor="var(--color-teal)" bg="var(--color-teal-light)">
-                <PanelRow label="ИТ" value="54% · 7 красных" valueColor="var(--color-red)" />
-                <PanelRow label="ИБ" value="61% · 4 красных" valueColor="var(--color-amber)" />
-                <PanelRow label="Реклама" value="67% · 5 красных" valueColor="var(--color-green)" />
-                <PanelRow label="Дизайн" value="72% · 2 красных" valueColor="var(--color-green)" />
+                {curatorByDirection.map((d) => (
+                  <PanelRow key={d.direction} label={d.direction} value={`${d.developmentPct}% · ${d.risk} риск`} valueColor={d.risk > 5 ? 'var(--color-red)' : 'var(--color-amber)'} />
+                ))}
               </Panel>
-              <Panel title="Активность кураторов" titleColor="var(--color-teal)" bg="var(--color-teal-light)">
-                <PanelRow label="Ср. время беседа → закрытие" value="3.2 дня" valueColor="var(--color-green)" />
-                <PanelRow label="Закрыли долг после беседы" value="68%" valueColor="var(--color-green)" />
-                <PanelRow label="Не отреагировали" value="3 куратора" valueColor="var(--color-amber)" />
+              <Panel title="Отзывы работодателей" titleColor="var(--color-teal)" bg="var(--color-teal-light)">
+                <PanelRow label="Средняя оценка" value={employerAvg} valueColor="var(--color-green)" />
+                {EMPLOYER_FEEDBACK.slice(-3).map((e, i) => (
+                  <PanelRow key={i} label={`${e.employer} · ${e.direction}`} value={e.score} valueColor={e.score >= 4.5 ? 'var(--color-green)' : 'var(--color-amber)'} />
+                ))}
               </Panel>
             </div>
           </div>
@@ -68,18 +111,16 @@ export default function DirectorPage() {
 
         {tab === 'ucheb' && (
           <div className="grid gap-3 sm:grid-cols-2">
-            <Panel title="Пересдачи" titleColor="var(--color-blue)" bg="var(--color-blue-light)">
-              <PanelRow label="На пересдаче" value={24} valueColor="var(--color-blue)" />
-              <PanelRow label="Попытка 1" value={14} valueColor="var(--color-green)" />
-              <PanelRow label="Попытка 2" value={7} valueColor="var(--color-amber)" />
-              <PanelRow label="Попытка 3" value={3} valueColor="var(--color-red)" />
-              <PanelRow label="Подлежат отчислению" value={2} valueColor="var(--color-red)" />
+            <Panel title="Контингент и пересдачи" titleColor="var(--color-blue)" bg="var(--color-blue-light)">
+              <PanelRow label="Студентов" value={contingentTotals.count} valueColor="var(--color-blue)" />
+              <PanelRow label="Пересдач всего" value={contingentTotals.retakes} valueColor="var(--color-amber)" />
+              <PanelRow label="Отчислено" value={contingentTotals.expelled} valueColor="var(--color-red)" />
+              <PanelRow label="В академ. отпуске" value={contingentTotals.academicLeave} valueColor="var(--color-gray)" />
             </Panel>
             <Panel title="Преподавательский состав" titleColor="var(--color-purple)" bg="var(--color-purple-light)">
-              <PanelRow label="Проведено ОУ" value={18} valueColor="var(--color-purple)" />
-              <PanelRow label="Средняя оценка" value="4.1" valueColor="var(--color-green)" />
-              <PanelRow label="С флагом повторного ОУ" value={3} valueColor="var(--color-red)" />
-              <PanelRow label="Охват СОП" value="94%" valueColor="var(--color-green)" />
+              <PanelRow label="Преподавателей в СОП" value={TEACHER_SOP.length} valueColor="var(--color-purple)" />
+              <PanelRow label="Средняя оценка СОП" value={teacherAvg} valueColor="var(--color-green)" />
+              <PanelRow label="С критическим флагом" value={criticalTeachers.length} valueColor="var(--color-red)" />
             </Panel>
           </div>
         )}

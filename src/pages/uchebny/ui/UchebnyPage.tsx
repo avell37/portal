@@ -1,83 +1,93 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import { CONTINGENT, CONTINGENT_PERIODS } from '@/entities/metrics'
 
-interface Student {
-  id: string
-  name: string
-  group: string
-  subjects: { name: string; score: number; attempt: number }[]
+const LATEST_PERIOD_WITH_DATA = [...CONTINGENT_PERIODS].reverse().find((p) => CONTINGENT.some((r) => r.period === p && r.avgGrade !== null)) ?? CONTINGENT_PERIODS[0]!
+
+function fmt(v: number | null, digits = 1) {
+  return v === null ? '—' : v.toFixed(digits)
 }
 
-const STUDENTS: Student[] = [
-  { id: '1', name: 'Громов П. И.', group: 'ИТ-23', subjects: [
-    { name: 'Математика', score: 38, attempt: 2 },
-    { name: 'Основы ОС', score: 29, attempt: 2 },
-    { name: 'Английский', score: 41, attempt: 1 },
-  ] },
-  { id: '2', name: 'Ким А. В.', group: 'ИТ-23', subjects: [
-    { name: 'Математика', score: 41, attempt: 1 },
-    { name: 'Физика', score: 33, attempt: 1 },
-  ] },
-  { id: '3', name: 'Захарова М. Е.', group: 'ИБ-24', subjects: [
-    { name: 'Английский', score: 45, attempt: 1 },
-  ] },
-  { id: '4', name: 'Алиев Д. Р.', group: 'ИТ-24', subjects: [
-    { name: 'Основы ОС', score: 36, attempt: 1 },
-    { name: 'Математика', score: 22, attempt: 1 },
-  ] },
-]
-
 export default function UchebnyPage() {
-  const [openId, setOpenId] = useState<string | null>(null)
+  const [period, setPeriod] = useState(LATEST_PERIOD_WITH_DATA)
 
-  const totalSubjects = STUDENTS.reduce((sum, s) => sum + s.subjects.length, 0)
+  const rows = useMemo(() => CONTINGENT.filter((r) => r.period === period), [period])
+
+  const totals = useMemo(() => {
+    const count = rows.reduce((sum, r) => sum + r.count, 0)
+    const expelled = rows.reduce((sum, r) => sum + r.expelled, 0)
+    const transfers = rows.reduce((sum, r) => sum + r.transfers, 0)
+    const academicLeave = rows.reduce((sum, r) => sum + r.academicLeave, 0)
+    const retakeRows = rows.filter((r) => r.retakes !== null)
+    const retakes = retakeRows.reduce((sum, r) => sum + (r.retakes ?? 0), 0)
+    return { count, expelled, transfers, academicLeave, retakes }
+  }, [rows])
 
   return (
     <div>
       <h1 className="text-[22px] font-semibold text-auth-black">Учебный отдел</h1>
-      <p className="mt-1 text-[14px] text-auth-gray">Пересдачи · Автоматическое выявление студентов</p>
+      <p className="mt-1 text-[14px] text-auth-gray">Контингент · Пересдачи · Посещаемость по направлениям</p>
 
       <div className="mt-6">
-        <div className="mb-4 flex flex-wrap gap-4 rounded-[14px] bg-gray-light px-4 py-2.5 text-[12px] text-auth-gray">
-          <span>Студентов: <b className="text-auth-black">{STUDENTS.length}</b></span>
-          <span>Пересдач всего: <b className="text-auth-black">{totalSubjects}</b></span>
-          <span>С 2+ предметами: <b className="text-auth-black">{STUDENTS.filter((s) => s.subjects.length >= 2).length}</b></span>
+        <div className="mb-4 flex flex-wrap gap-2">
+          {CONTINGENT_PERIODS.map((p) => (
+            <button
+              key={p}
+              onClick={() => setPeriod(p)}
+              className={`rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition-colors ${
+                period === p ? 'bg-auth-primary text-white' : 'bg-gray-light text-gray hover:opacity-80'
+              }`}
+            >
+              {p}
+            </button>
+          ))}
         </div>
 
-        <div className="space-y-2">
-          {STUDENTS.map((s) => (
-            <div key={s.id} className="rounded-[16px] border border-border bg-white">
-              <button
-                onClick={() => setOpenId(openId === s.id ? null : s.id)}
-                className="flex w-full flex-wrap items-center gap-3 p-3.5 text-left"
-              >
-                <span className="min-w-40 text-[13px] font-semibold text-auth-black">{s.name}</span>
-                <span className="text-[11px] text-auth-gray">{s.group}</span>
-                <div className="flex flex-1 flex-wrap gap-1.5">
-                  {s.subjects.map((sub) => (
-                    <span key={sub.name} className="rounded-full bg-red-light px-2 py-0.5 text-[11px] font-medium text-red">
-                      {sub.name}
-                    </span>
-                  ))}
-                </div>
-                <span className="rounded-full bg-purple-light px-2 py-1 text-[11px] font-semibold text-purple">
-                  {s.subjects.length} предм.
-                </span>
-              </button>
-              {openId === s.id && (
-                <div className="border-t border-border p-3.5">
-                  {s.subjects.map((sub) => (
-                    <div key={sub.name} className="flex items-center justify-between border-b border-dashed border-border py-2 text-[13px] last:border-none">
-                      <span className="text-auth-black">{sub.name}</span>
-                      <div className="flex items-center gap-3">
-                        <span className="rounded-full bg-red-light px-2 py-0.5 text-[11px] font-semibold text-red">{sub.score} б</span>
-                        <span className="text-[11px] text-auth-gray">Попытка {sub.attempt} из 3</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+        <div className="mb-4 flex flex-wrap gap-4 rounded-[14px] bg-gray-light px-4 py-2.5 text-[12px] text-auth-gray">
+          <span>Студентов: <b className="text-auth-black">{totals.count}</b></span>
+          <span>Отчислено: <b className="text-red">{totals.expelled}</b></span>
+          <span>Переводов: <b className="text-auth-black">{totals.transfers}</b></span>
+          <span>Академ. отпусков: <b className="text-auth-black">{totals.academicLeave}</b></span>
+          <span>Пересдач всего: <b className="text-auth-black">{totals.retakes}</b></span>
+        </div>
+
+        <div className="overflow-x-auto rounded-[16px] border border-border bg-white">
+          <table className="w-full text-left text-[13px]">
+            <thead>
+              <tr className="border-b border-border text-[11px] uppercase text-auth-gray">
+                <th className="px-4 py-3 font-semibold">Направление</th>
+                <th className="px-3 py-3 font-semibold">Курс</th>
+                <th className="px-3 py-3 font-semibold">Кол-во</th>
+                <th className="px-3 py-3 font-semibold">Отчисл.</th>
+                <th className="px-3 py-3 font-semibold">Переводы</th>
+                <th className="px-3 py-3 font-semibold">Ак. отпуск</th>
+                <th className="px-3 py-3 font-semibold">Посещаемость</th>
+                <th className="px-3 py-3 font-semibold">Ср. оценка</th>
+                <th className="px-3 py-3 font-semibold">Пересдач</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={`${r.direction}-${r.course}`} className="border-b border-border last:border-none">
+                  <td className="px-4 py-2.5 font-semibold text-auth-black">{r.direction}</td>
+                  <td className="px-3 py-2.5 text-auth-gray">{r.course}</td>
+                  <td className="px-3 py-2.5 text-auth-black">{r.count}</td>
+                  <td className="px-3 py-2.5">
+                    {r.expelled > 0 ? <span className="rounded-full bg-red-light px-2 py-0.5 text-[11px] font-semibold text-red">{r.expelled}</span> : <span className="text-auth-gray">—</span>}
+                  </td>
+                  <td className="px-3 py-2.5 text-auth-black">{r.transfers || '—'}</td>
+                  <td className="px-3 py-2.5 text-auth-black">{r.academicLeave || '—'}</td>
+                  <td className="px-3 py-2.5 text-auth-black">{r.attendance !== null ? `${r.attendance}%` : '—'}</td>
+                  <td className="px-3 py-2.5 text-auth-black">{fmt(r.avgGrade, 2)}</td>
+                  <td className="px-3 py-2.5 text-auth-black">{r.retakes ?? '—'}</td>
+                </tr>
+              ))}
+              {rows.length === 0 && (
+                <tr>
+                  <td colSpan={9} className="px-4 py-8 text-center text-auth-gray">Нет данных за этот период</td>
+                </tr>
               )}
-            </div>
-          ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

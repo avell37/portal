@@ -1,104 +1,101 @@
-import { useState } from 'react'
-
-type Zone = 'red' | 'yellow' | 'green'
-interface Student {
-  id: string
-  name: string
-  zone: Zone
-  avg: number
-  redSubjects: number
-}
-
-const ZONE_META: Record<Zone, { label: string; color: string; bg: string; scoreColor: string }> = {
-  red: { label: 'Красная', color: 'var(--color-red)', bg: 'var(--color-red-light)', scoreColor: 'var(--color-score-bad)' },
-  yellow: { label: 'Жёлтая', color: 'var(--color-amber)', bg: 'var(--color-amber-light)', scoreColor: 'var(--color-score-warn)' },
-  green: { label: 'Зелёная', color: 'var(--color-green)', bg: 'var(--color-green-light)', scoreColor: 'var(--color-score-good)' },
-}
-
-const STUDENTS: Student[] = [
-  { id: '1', name: 'Громов П. И.', zone: 'red', avg: 41, redSubjects: 3 },
-  { id: '2', name: 'Ким А. В.', zone: 'red', avg: 38, redSubjects: 4 },
-  { id: '3', name: 'Захарова М. Е.', zone: 'yellow', avg: 55, redSubjects: 1 },
-  { id: '4', name: 'Алиев Д. Р.', zone: 'yellow', avg: 52, redSubjects: 2 },
-  { id: '5', name: 'Петрова Н. И.', zone: 'green', avg: 78, redSubjects: 0 },
-  { id: '6', name: 'Морозова Е. А.', zone: 'green', avg: 84, redSubjects: 0 },
-]
+import { useMemo, useState } from 'react'
+import { CURATOR_ZONES, CURATOR_ZONE_PERIODS } from '@/entities/metrics'
 
 export default function VospitatelniyPage() {
-  const [filter, setFilter] = useState<Zone | 'all'>('all')
-  const [selected, setSelected] = useState<Student | null>(null)
+  const [period, setPeriod] = useState(CURATOR_ZONE_PERIODS[CURATOR_ZONE_PERIODS.length - 1]!)
 
-  const counts = {
-    red: STUDENTS.filter((s) => s.zone === 'red').length,
-    yellow: STUDENTS.filter((s) => s.zone === 'yellow').length,
-    green: STUDENTS.filter((s) => s.zone === 'green').length,
-  }
-  const visible = filter === 'all' ? STUDENTS : STUDENTS.filter((s) => s.zone === filter)
+  const rows = useMemo(() => CURATOR_ZONES.filter((r) => r.period === period), [period])
 
-  if (selected) {
-    const meta = ZONE_META[selected.zone]
-    return (
-      <div>
-        <button onClick={() => setSelected(null)} className="mb-4 text-[12px] font-semibold text-auth-primary">← Вернуться к списку</button>
-
-        <div className="rounded-[16px] bg-auth-primary p-4 text-white">
-          <div className="text-base font-bold">{selected.name}</div>
-          <div className="mt-1 text-[12px] opacity-70">Зона: <span style={{ color: meta.scoreColor }}>{meta.label}</span></div>
-        </div>
-        <div className="mt-4 max-w-2xl rounded-[16px] border border-border bg-white p-4">
-          <div className="mb-2 text-[11px] font-semibold uppercase text-auth-gray">История бесед</div>
-          <div className="text-[13px] text-auth-gray">Бесед пока не зафиксировано.</div>
-          <button className="mt-3 rounded-[10px] bg-auth-primary px-3 py-2 text-[12px] font-semibold text-white transition-opacity hover:opacity-90">Добавить запись о беседе</button>
-        </div>
-      </div>
-    )
-  }
+  const totals = useMemo(() => {
+    const risk = rows.reduce((sum, r) => sum + r.risk, 0)
+    const attention = rows.reduce((sum, r) => sum + r.attention, 0)
+    const development = rows.reduce((sum, r) => sum + r.development, 0)
+    const lateness = rows.reduce((sum, r) => sum + r.lateness, 0)
+    const poorAttendance = rows.reduce((sum, r) => sum + r.poorAttendance, 0)
+    return { risk, attention, development, lateness, poorAttendance, total: risk + attention + development }
+  }, [rows])
 
   return (
     <div>
       <h1 className="text-[22px] font-semibold text-auth-black">Воспитательный отдел</h1>
-      <p className="mt-1 text-[14px] text-auth-gray">Сводка группы · Зоны успеваемости</p>
+      <p className="mt-1 text-[14px] text-auth-gray">Зоны успеваемости по направлениям · Кураторские отчёты</p>
 
-      <div className="mt-6 max-w-2xl">
-        <div className="mb-4 flex flex-wrap gap-4 rounded-[14px] bg-gray-light px-4 py-2.5 text-[12px] text-auth-gray">
-          <span>Красных: <b className="text-red">{counts.red}</b></span>
-          <span>Жёлтых: <b className="text-amber">{counts.yellow}</b></span>
-          <span>Зелёных: <b className="text-green">{counts.green}</b></span>
-          <span>Всего: <b className="text-auth-black">{STUDENTS.length}</b></span>
-        </div>
-
+      <div className="mt-6">
         <div className="mb-4 flex flex-wrap gap-2">
-          {(['all', 'red', 'yellow', 'green'] as const).map((f) => (
+          {CURATOR_ZONE_PERIODS.map((p) => (
             <button
-              key={f}
-              onClick={() => setFilter(f)}
+              key={p}
+              onClick={() => setPeriod(p)}
               className={`rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition-colors ${
-                filter === f ? 'bg-auth-primary text-white' : 'bg-gray-light text-gray hover:opacity-80'
+                period === p ? 'bg-auth-primary text-white' : 'bg-gray-light text-gray hover:opacity-80'
               }`}
             >
-              {f === 'all' ? 'Все' : ZONE_META[f].label}
+              {p}
             </button>
           ))}
         </div>
 
-        <div className="space-y-2">
-          {visible.map((s) => {
-            const meta = ZONE_META[s.zone]
-            return (
-              <button
-                key={s.id}
-                onClick={() => setSelected(s)}
-                className="flex w-full items-center gap-3 rounded-[16px] border border-border bg-white p-3.5 text-left transition-colors hover:bg-gray-light"
-              >
-                <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={{ background: meta.color }} />
-                <span className="min-w-40 text-[13px] font-semibold text-auth-black">{s.name}</span>
-                <span className="flex-1 text-[12px] text-auth-gray">Средний % по КТ: {s.avg}%</span>
-                <span className="rounded-full px-2.5 py-1 text-[11px] font-medium" style={{ background: meta.bg, color: meta.color }}>
-                  {s.redSubjects} красных предм.
-                </span>
-              </button>
-            )
-          })}
+        <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
+          <div className="rounded-[16px] bg-red p-4 text-center text-white">
+            <div className="text-2xl font-bold leading-none">{totals.risk}</div>
+            <div className="mt-1.5 text-[11px] opacity-80">Зона риска</div>
+          </div>
+          <div className="rounded-[16px] bg-amber p-4 text-center text-white">
+            <div className="text-2xl font-bold leading-none">{totals.attention}</div>
+            <div className="mt-1.5 text-[11px] opacity-80">Зона внимания</div>
+          </div>
+          <div className="rounded-[16px] bg-green p-4 text-center text-white">
+            <div className="text-2xl font-bold leading-none">{totals.development}</div>
+            <div className="mt-1.5 text-[11px] opacity-80">Зона развития</div>
+          </div>
+          <div className="rounded-[16px] bg-gray p-4 text-center text-white">
+            <div className="text-2xl font-bold leading-none">{totals.lateness}</div>
+            <div className="mt-1.5 text-[11px] opacity-80">Опоздания</div>
+          </div>
+          <div className="rounded-[16px] bg-gray p-4 text-center text-white">
+            <div className="text-2xl font-bold leading-none">{totals.poorAttendance}</div>
+            <div className="mt-1.5 text-[11px] opacity-80">Плохая посещаемость</div>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto rounded-[16px] border border-border bg-white">
+          <table className="w-full text-left text-[13px]">
+            <thead>
+              <tr className="border-b border-border text-[11px] uppercase text-auth-gray">
+                <th className="px-4 py-3 font-semibold">Направление</th>
+                <th className="px-3 py-3 font-semibold">Курс</th>
+                <th className="px-3 py-3 font-semibold">Зона риска</th>
+                <th className="px-3 py-3 font-semibold">Зона внимания</th>
+                <th className="px-3 py-3 font-semibold">Зона развития</th>
+                <th className="px-3 py-3 font-semibold">Опоздания</th>
+                <th className="px-3 py-3 font-semibold">Плохая посещаемость</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={`${r.direction}-${r.course}`} className="border-b border-border last:border-none">
+                  <td className="px-4 py-2.5 font-semibold text-auth-black">{r.direction}</td>
+                  <td className="px-3 py-2.5 text-auth-gray">{r.course}</td>
+                  <td className="px-3 py-2.5">
+                    {r.risk > 0 ? <span className="rounded-full bg-red-light px-2 py-0.5 text-[11px] font-semibold text-red">{r.risk}</span> : <span className="text-auth-gray">—</span>}
+                  </td>
+                  <td className="px-3 py-2.5">
+                    {r.attention > 0 ? <span className="rounded-full bg-amber-light px-2 py-0.5 text-[11px] font-semibold text-amber">{r.attention}</span> : <span className="text-auth-gray">—</span>}
+                  </td>
+                  <td className="px-3 py-2.5">
+                    {r.development > 0 ? <span className="rounded-full bg-green-light px-2 py-0.5 text-[11px] font-semibold text-green">{r.development}</span> : <span className="text-auth-gray">—</span>}
+                  </td>
+                  <td className="px-3 py-2.5 text-auth-black">{r.lateness || '—'}</td>
+                  <td className="px-3 py-2.5 text-auth-black">{r.poorAttendance || '—'}</td>
+                </tr>
+              ))}
+              {rows.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="px-4 py-8 text-center text-auth-gray">Нет данных за этот период</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
