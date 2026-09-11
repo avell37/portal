@@ -3,3 +3,6 @@ export type { TeacherSopEntry } from './model/teacher-sop'
 
 export { CONTINGENT, CONTINGENT_PERIODS } from './model/contingent'
 export type { ContingentEntry } from './model/contingent'
+
+export { CURATOR_ZONES, CURATOR_ZONE_PERIODS } from './model/curator-zones'
+export type { CuratorZoneEntry } from './model/curator-zones'
