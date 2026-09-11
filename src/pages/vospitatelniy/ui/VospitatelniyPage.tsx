@@ -1,5 +1,8 @@
 import { useMemo, useState } from 'react'
 import { CURATOR_ZONES, CURATOR_ZONE_PERIODS } from '@/entities/metrics'
+import { DonutChart, ColumnChart, TrendLineChart } from '@/shared/ui'
+
+const ZONE_COLORS = { risk: '#a32d2d', attention: '#854f0b', development: '#3b6d11' }
 
 export default function VospitatelniyPage() {
   const [period, setPeriod] = useState(CURATOR_ZONE_PERIODS[CURATOR_ZONE_PERIODS.length - 1]!)
@@ -14,6 +17,46 @@ export default function VospitatelniyPage() {
     const poorAttendance = rows.reduce((sum, r) => sum + r.poorAttendance, 0)
     return { risk, attention, development, lateness, poorAttendance, total: risk + attention + development }
   }, [rows])
+
+  const byDirection = useMemo(() => {
+    const map = new Map<string, { risk: number; attention: number; development: number }>()
+    for (const r of rows) {
+      const cur = map.get(r.direction) ?? { risk: 0, attention: 0, development: 0 }
+      cur.risk += r.risk
+      cur.attention += r.attention
+      cur.development += r.development
+      map.set(r.direction, cur)
+    }
+    return Array.from(map.entries()).map(([direction, v]) => ({ direction, ...v }))
+  }, [rows])
+
+  const zoneSlices = useMemo(
+    () => [
+      { label: 'Зона риска', value: totals.risk, color: ZONE_COLORS.risk },
+      { label: 'Зона внимания', value: totals.attention, color: ZONE_COLORS.attention },
+      { label: 'Зона развития', value: totals.development, color: ZONE_COLORS.development },
+    ],
+    [totals],
+  )
+
+  const directionLabels = byDirection.map((d) => d.direction)
+  const zoneSeries = useMemo(
+    () => [
+      { label: 'Зона риска', color: ZONE_COLORS.risk, values: byDirection.map((d) => d.risk) },
+      { label: 'Зона внимания', color: ZONE_COLORS.attention, values: byDirection.map((d) => d.attention) },
+      { label: 'Зона развития', color: ZONE_COLORS.development, values: byDirection.map((d) => d.development) },
+    ],
+    [byDirection],
+  )
+
+  const riskTrend = useMemo(
+    () =>
+      CURATOR_ZONE_PERIODS.map((p) => ({
+        period: p,
+        value: CURATOR_ZONES.filter((r) => r.period === p).reduce((s, r) => s + r.risk, 0),
+      })),
+    [],
+  )
 
   return (
     <div>
@@ -57,6 +100,26 @@ export default function VospitatelniyPage() {
             <div className="mt-1.5 text-[11px] opacity-80">Плохая посещаемость</div>
           </div>
         </div>
+
+        {byDirection.length > 0 && (
+          <div className="mb-4 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-[16px] border border-border bg-white p-4">
+              <div className="mb-3 text-[12px] font-semibold uppercase text-auth-gray">Состав зон</div>
+              <DonutChart slices={zoneSlices} />
+            </div>
+            <div className="rounded-[16px] border border-border bg-white p-4">
+              <div className="mb-3 text-[12px] font-semibold uppercase text-auth-gray">Зоны по направлениям</div>
+              <ColumnChart categories={directionLabels} series={zoneSeries} height={180} />
+            </div>
+          </div>
+        )}
+
+        {riskTrend.length > 1 && (
+          <div className="mb-4 rounded-[16px] border border-border bg-white p-4">
+            <div className="mb-3 text-[12px] font-semibold uppercase text-auth-gray">Зона риска по семестрам</div>
+            <TrendLineChart labels={riskTrend.map((p) => p.period)} values={riskTrend.map((p) => p.value)} color={ZONE_COLORS.risk} height={180} />
+          </div>
+        )}
 
         <div className="overflow-x-auto rounded-[16px] border border-border bg-white">
           <table className="w-full text-left text-[13px]">

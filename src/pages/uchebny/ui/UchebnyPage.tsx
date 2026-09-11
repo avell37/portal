@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { CONTINGENT, CONTINGENT_PERIODS } from '@/entities/metrics'
+import { ColumnChart, TrendLineChart } from '@/shared/ui'
 
 const LATEST_PERIOD_WITH_DATA = [...CONTINGENT_PERIODS].reverse().find((p) => CONTINGENT.some((r) => r.period === p && r.avgGrade !== null)) ?? CONTINGENT_PERIODS[0]!
 
@@ -21,6 +22,44 @@ export default function UchebnyPage() {
     const retakes = retakeRows.reduce((sum, r) => sum + (r.retakes ?? 0), 0)
     return { count, expelled, transfers, academicLeave, retakes }
   }, [rows])
+
+  const byDirection = useMemo(() => {
+    const map = new Map<string, { count: number; attendanceSum: number; attendanceWeight: number }>()
+    for (const r of rows) {
+      const cur = map.get(r.direction) ?? { count: 0, attendanceSum: 0, attendanceWeight: 0 }
+      cur.count += r.count
+      if (r.attendance !== null) {
+        cur.attendanceSum += r.attendance * r.count
+        cur.attendanceWeight += r.count
+      }
+      map.set(r.direction, cur)
+    }
+    return Array.from(map.entries()).map(([direction, v]) => ({
+      direction,
+      count: v.count,
+      attendance: v.attendanceWeight ? Math.round(v.attendanceSum / v.attendanceWeight) : null,
+    }))
+  }, [rows])
+
+  const directionLabels = byDirection.map((d) => d.direction)
+  const countSeries = useMemo(
+    () => [{ label: 'Студентов', color: '#9a33f4', values: byDirection.map((d) => d.count) }],
+    [byDirection],
+  )
+  const attendanceSeries = useMemo(
+    () => [{ label: 'Посещаемость', color: '#185fa5', values: byDirection.map((d) => d.attendance ?? 0) }],
+    [byDirection],
+  )
+  const hasAttendance = byDirection.some((d) => d.attendance !== null)
+
+  const retakesTrend = useMemo(() => {
+    const points = CONTINGENT_PERIODS.map((p) => {
+      const periodRows = CONTINGENT.filter((r) => r.period === p && r.retakes !== null)
+      if (periodRows.length === 0) return null
+      return { period: p, value: periodRows.reduce((s, r) => s + (r.retakes ?? 0), 0) }
+    }).filter((x): x is { period: string; value: number } => x !== null)
+    return points
+  }, [])
 
   return (
     <div>
@@ -49,6 +88,28 @@ export default function UchebnyPage() {
           <span>Академ. отпусков: <b className="text-auth-black">{totals.academicLeave}</b></span>
           <span>Пересдач всего: <b className="text-auth-black">{totals.retakes}</b></span>
         </div>
+
+        {directionLabels.length > 0 && (
+          <div className="mb-4 grid gap-3 sm:grid-cols-2">
+            <div className="rounded-[16px] border border-border bg-white p-4">
+              <div className="mb-3 text-[12px] font-semibold uppercase text-auth-gray">Студентов по направлениям</div>
+              <ColumnChart categories={directionLabels} series={countSeries} height={180} />
+            </div>
+            {hasAttendance && (
+              <div className="rounded-[16px] border border-border bg-white p-4">
+                <div className="mb-3 text-[12px] font-semibold uppercase text-auth-gray">Посещаемость по направлениям</div>
+                <ColumnChart categories={directionLabels} series={attendanceSeries} height={180} formatValue={(v) => `${v}%`} />
+              </div>
+            )}
+          </div>
+        )}
+
+        {retakesTrend.length > 1 && (
+          <div className="mb-4 rounded-[16px] border border-border bg-white p-4">
+            <div className="mb-3 text-[12px] font-semibold uppercase text-auth-gray">Пересдачи по семестрам</div>
+            <TrendLineChart labels={retakesTrend.map((p) => p.period)} values={retakesTrend.map((p) => p.value)} color="#a32d2d" height={200} />
+          </div>
+        )}
 
         <div className="overflow-x-auto rounded-[16px] border border-border bg-white">
           <table className="w-full text-left text-[13px]">

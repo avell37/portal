@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { TEACHER_SOP } from '@/entities/metrics'
+import { DonutChart, ColumnChart } from '@/shared/ui'
 
 const CRITERIA = [
   'Чёткость постановки целей урока',
@@ -18,6 +19,10 @@ type TabId = (typeof TABS)[number]['id']
 
 function scoreColor(v: number) {
   return v >= 4 ? 'var(--color-green)' : v >= 3.1 ? 'var(--color-amber)' : 'var(--color-red)'
+}
+
+function scoreColorHex(v: number) {
+  return v >= 4 ? '#3b6d11' : v >= 3.1 ? '#854f0b' : '#a32d2d'
 }
 
 function OpenLessonsTab() {
@@ -78,6 +83,30 @@ function OpenLessonsTab() {
 function SopAnalyticsTab() {
   const critical = TEACHER_SOP.filter((t) => t.interest <= 3 || t.delivery <= 3 || t.feedback <= 3 || t.comfort <= 3)
 
+  const extremes = useMemo(() => {
+    const sorted = [...TEACHER_SOP].sort((a, b) => b.overall - a.overall)
+    const top = sorted.slice(0, 5)
+    const bottom = sorted.slice(-5).reverse()
+    const seen = new Set(top.map((t) => t.name))
+    const rows = [...top, ...bottom.filter((t) => !seen.has(t.name))]
+    return {
+      labels: rows.map((t) => t.name),
+      colors: rows.map((t) => scoreColorHex(t.overall)),
+      values: rows.map((t) => t.overall),
+    }
+  }, [])
+
+  const tierSlices = useMemo(() => {
+    const good = TEACHER_SOP.filter((t) => t.overall >= 4).length
+    const warn = TEACHER_SOP.filter((t) => t.overall >= 3.1 && t.overall < 4).length
+    const bad = TEACHER_SOP.filter((t) => t.overall < 3.1).length
+    return [
+      { label: 'Хорошо (≥ 4.0)', value: good, color: '#3b6d11' },
+      { label: 'Средне (3.1–3.9)', value: warn, color: '#854f0b' },
+      { label: 'Низко (< 3.1)', value: bad, color: '#a32d2d' },
+    ]
+  }, [])
+
   return (
     <div>
       {critical.length > 0 && (
@@ -85,6 +114,23 @@ function SopAnalyticsTab() {
           ⚠ Критический сигнал — {critical.map((t) => t.name).join(', ')}: оценка ≤ 3.0 по одному или нескольким критериям
         </div>
       )}
+
+      <div className="mb-4 grid gap-3 sm:grid-cols-2">
+        <div className="rounded-[16px] border border-border bg-white p-4">
+          <div className="mb-3 text-[12px] font-semibold uppercase text-auth-gray">Преподаватели по уровню оценки</div>
+          <DonutChart slices={tierSlices} />
+        </div>
+        <div className="rounded-[16px] border border-border bg-white p-4">
+          <div className="mb-3 text-[12px] font-semibold uppercase text-auth-gray">Лучшие и худшие по средней оценке СОП</div>
+          <ColumnChart
+            categories={extremes.labels}
+            series={[{ label: 'Средняя оценка', color: extremes.colors, values: extremes.values }]}
+            horizontal
+            height={220}
+          />
+        </div>
+      </div>
+
       <div className="overflow-x-auto rounded-[16px] border border-border bg-white">
         <table className="w-full text-left text-[13px]">
           <thead>

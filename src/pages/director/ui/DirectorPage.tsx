@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
-import { StatCard, Panel, PanelRow } from '@/shared/ui'
+import { StatCard, Panel, PanelRow, DonutChart, ColumnChart, TrendLineChart } from '@/shared/ui'
 import { CONTINGENT, CONTINGENT_PERIODS, CURATOR_ZONES, CURATOR_ZONE_PERIODS, TEACHER_SOP, EMPLOYER_FEEDBACK } from '@/entities/metrics'
+
+const ZONE_COLORS = { risk: '#a32d2d', attention: '#854f0b', development: '#3b6d11' }
 
 const TABS = [
   { id: 'summary', label: 'Общая сводка' },
@@ -52,6 +54,30 @@ export default function DirectorPage() {
     })
   }, [curatorRows])
 
+  const zoneSlices = useMemo(
+    () => [
+      { label: 'Зона риска', value: curatorTotals.risk, color: ZONE_COLORS.risk },
+      { label: 'Зона внимания', value: curatorTotals.attention, color: ZONE_COLORS.attention },
+      { label: 'Зона развития', value: curatorTotals.development, color: ZONE_COLORS.development },
+    ],
+    [curatorTotals],
+  )
+
+  const riskTrend = useMemo(
+    () =>
+      CURATOR_ZONE_PERIODS.map((p) => ({
+        period: p,
+        value: CURATOR_ZONES.filter((r) => r.period === p).reduce((s, r) => s + r.risk, 0),
+      })),
+    [],
+  )
+
+  const contingentByDirection = useMemo(() => {
+    const map = new Map<string, number>()
+    for (const r of contingentRows) map.set(r.direction, (map.get(r.direction) ?? 0) + r.count)
+    return Array.from(map.entries())
+  }, [contingentRows])
+
   const criticalTeachers = useMemo(() => TEACHER_SOP.filter((t) => t.interest <= 3 || t.delivery <= 3 || t.feedback <= 3 || t.comfort <= 3), [])
   const teacherAvg = useMemo(() => round1(TEACHER_SOP.reduce((s, t) => s + t.overall, 0) / TEACHER_SOP.length), [])
   const employerAvg = useMemo(() => round1(EMPLOYER_FEEDBACK.reduce((s, e) => s + e.score, 0) / EMPLOYER_FEEDBACK.length), [])
@@ -94,11 +120,10 @@ export default function DirectorPage() {
               <StatCard value={curatorTotals.development} label="Зона развития" color="var(--color-green)" />
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
-              <Panel title="По направлениям" titleColor="var(--color-teal)" bg="var(--color-teal-light)">
-                {curatorByDirection.map((d) => (
-                  <PanelRow key={d.direction} label={d.direction} value={`${d.developmentPct}% · ${d.risk} риск`} valueColor={d.risk > 5 ? 'var(--color-red)' : 'var(--color-amber)'} />
-                ))}
-              </Panel>
+              <div className="rounded-[16px] border border-border bg-white p-4">
+                <div className="mb-3 text-[12px] font-semibold uppercase text-auth-gray">Состав зон</div>
+                <DonutChart slices={zoneSlices} />
+              </div>
               <Panel title="Отзывы работодателей" titleColor="var(--color-teal)" bg="var(--color-teal-light)">
                 <PanelRow label="Средняя оценка" value={employerAvg} valueColor="var(--color-green)" />
                 {EMPLOYER_FEEDBACK.slice(-3).map((e, i) => (
@@ -106,22 +131,40 @@ export default function DirectorPage() {
                 ))}
               </Panel>
             </div>
+            {riskTrend.length > 1 && (
+              <div className="rounded-[16px] border border-border bg-white p-4">
+                <div className="mb-3 text-[12px] font-semibold uppercase text-auth-gray">Зона риска по семестрам</div>
+                <TrendLineChart labels={riskTrend.map((p) => p.period)} values={riskTrend.map((p) => p.value)} color={ZONE_COLORS.risk} height={180} />
+              </div>
+            )}
           </div>
         )}
 
         {tab === 'ucheb' && (
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Panel title="Контингент и пересдачи" titleColor="var(--color-blue)" bg="var(--color-blue-light)">
-              <PanelRow label="Студентов" value={contingentTotals.count} valueColor="var(--color-blue)" />
-              <PanelRow label="Пересдач всего" value={contingentTotals.retakes} valueColor="var(--color-amber)" />
-              <PanelRow label="Отчислено" value={contingentTotals.expelled} valueColor="var(--color-red)" />
-              <PanelRow label="В академ. отпуске" value={contingentTotals.academicLeave} valueColor="var(--color-gray)" />
-            </Panel>
-            <Panel title="Преподавательский состав" titleColor="var(--color-purple)" bg="var(--color-purple-light)">
-              <PanelRow label="Преподавателей в СОП" value={TEACHER_SOP.length} valueColor="var(--color-purple)" />
-              <PanelRow label="Средняя оценка СОП" value={teacherAvg} valueColor="var(--color-green)" />
-              <PanelRow label="С критическим флагом" value={criticalTeachers.length} valueColor="var(--color-red)" />
-            </Panel>
+          <div className="space-y-4">
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Panel title="Контингент и пересдачи" titleColor="var(--color-blue)" bg="var(--color-blue-light)">
+                <PanelRow label="Студентов" value={contingentTotals.count} valueColor="var(--color-blue)" />
+                <PanelRow label="Пересдач всего" value={contingentTotals.retakes} valueColor="var(--color-amber)" />
+                <PanelRow label="Отчислено" value={contingentTotals.expelled} valueColor="var(--color-red)" />
+                <PanelRow label="В академ. отпуске" value={contingentTotals.academicLeave} valueColor="var(--color-gray)" />
+              </Panel>
+              <Panel title="Преподавательский состав" titleColor="var(--color-purple)" bg="var(--color-purple-light)">
+                <PanelRow label="Преподавателей в СОП" value={TEACHER_SOP.length} valueColor="var(--color-purple)" />
+                <PanelRow label="Средняя оценка СОП" value={teacherAvg} valueColor="var(--color-green)" />
+                <PanelRow label="С критическим флагом" value={criticalTeachers.length} valueColor="var(--color-red)" />
+              </Panel>
+            </div>
+            {contingentByDirection.length > 0 && (
+              <div className="rounded-[16px] border border-border bg-white p-4">
+                <div className="mb-3 text-[12px] font-semibold uppercase text-auth-gray">Студентов по направлениям</div>
+                <ColumnChart
+                  categories={contingentByDirection.map(([direction]) => direction)}
+                  series={[{ label: 'Студентов', color: '#9a33f4', values: contingentByDirection.map(([, count]) => count) }]}
+                  height={180}
+                />
+              </div>
+            )}
           </div>
         )}
 
