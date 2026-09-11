@@ -10,9 +10,10 @@ export interface BarChartItem {
 interface BarChartProps {
   items: BarChartItem[]
   formatValue?: (v: number) => string
+  labelWidth?: number
 }
 
-export default function BarChart({ items, formatValue = (v) => String(v) }: BarChartProps) {
+export default function BarChart({ items, formatValue = (v) => String(v), labelWidth = 96 }: BarChartProps) {
   const [hover, setHover] = useState<number | null>(null)
   const max = Math.max(...items.map((i) => i.value), 1)
 
@@ -25,7 +26,7 @@ export default function BarChart({ items, formatValue = (v) => String(v) }: BarC
           onMouseEnter={() => setHover(i)}
           onMouseLeave={() => setHover((h) => (h === i ? null : h))}
         >
-          <span className="w-24 shrink-0 truncate text-[12px] text-auth-gray">{item.label}</span>
+          <span className="shrink-0 truncate text-[12px] text-auth-gray" style={{ width: labelWidth }}>{item.label}</span>
           <div className="h-4 min-w-0 flex-1 rounded-full bg-gray-light">
             <div
               className="h-4 rounded-full transition-[width]"
@@ -35,7 +36,7 @@ export default function BarChart({ items, formatValue = (v) => String(v) }: BarC
           <span className="w-12 shrink-0 text-right text-[12px] font-semibold text-auth-black">{formatValue(item.value)}</span>
 
           {hover === i && (
-            <div className="absolute -top-9 left-24 z-10 rounded-[8px] bg-auth-black px-2.5 py-1.5 text-[11px] font-medium text-white shadow-lg">
+            <div className="absolute -top-9 z-10 rounded-[8px] bg-auth-black px-2.5 py-1.5 text-[11px] font-medium text-white shadow-lg" style={{ left: labelWidth }}>
               {item.label}: {formatValue(item.value)}
               {item.sublabel ? ` · ${item.sublabel}` : ''}
             </div>

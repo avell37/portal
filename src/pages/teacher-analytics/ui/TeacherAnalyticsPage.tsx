@@ -1,5 +1,6 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { TEACHER_SOP } from '@/entities/metrics'
+import { BarChart } from '@/shared/ui'
 
 const CRITERIA = [
   'Чёткость постановки целей урока',
@@ -78,6 +79,15 @@ function OpenLessonsTab() {
 function SopAnalyticsTab() {
   const critical = TEACHER_SOP.filter((t) => t.interest <= 3 || t.delivery <= 3 || t.feedback <= 3 || t.comfort <= 3)
 
+  const extremes = useMemo(() => {
+    const sorted = [...TEACHER_SOP].sort((a, b) => b.overall - a.overall)
+    const top = sorted.slice(0, 5)
+    const bottom = sorted.slice(-5).reverse()
+    const seen = new Set(top.map((t) => t.name))
+    const rows = [...top, ...bottom.filter((t) => !seen.has(t.name))]
+    return rows.map((t) => ({ label: t.name, value: t.overall, color: scoreColor(t.overall) }))
+  }, [])
+
   return (
     <div>
       {critical.length > 0 && (
@@ -85,6 +95,12 @@ function SopAnalyticsTab() {
           ⚠ Критический сигнал — {critical.map((t) => t.name).join(', ')}: оценка ≤ 3.0 по одному или нескольким критериям
         </div>
       )}
+
+      <div className="mb-4 rounded-[16px] border border-border bg-white p-4">
+        <div className="mb-3 text-[12px] font-semibold uppercase text-auth-gray">Лучшие и худшие по средней оценке СОП</div>
+        <BarChart items={extremes} labelWidth={160} />
+      </div>
+
       <div className="overflow-x-auto rounded-[16px] border border-border bg-white">
         <table className="w-full text-left text-[13px]">
           <thead>
