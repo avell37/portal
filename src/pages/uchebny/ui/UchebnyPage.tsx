@@ -92,12 +92,12 @@ export default function UchebnyPage() {
 
         {directionLabels.length > 0 && (
           <div className="mb-4 grid gap-3 sm:grid-cols-2">
-            <div className="rounded-[16px] border border-border bg-white p-4">
+            <div className="min-w-0 rounded-[16px] border border-border bg-white p-4">
               <div className="mb-3 text-[12px] font-semibold uppercase text-auth-gray">Студентов по направлениям</div>
               <ColumnChart categories={directionLabels} series={countSeries} height={180} />
             </div>
             {hasAttendance && (
-              <div className="rounded-[16px] border border-border bg-white p-4">
+              <div className="min-w-0 rounded-[16px] border border-border bg-white p-4">
                 <div className="mb-3 text-[12px] font-semibold uppercase text-auth-gray">Посещаемость по направлениям</div>
                 <ColumnChart categories={directionLabels} series={attendanceSeries} height={180} formatValue={(v) => `${v}%`} />
               </div>
@@ -106,7 +106,7 @@ export default function UchebnyPage() {
         )}
 
         {retakesTrend.length > 1 && (
-          <div className="mb-4 rounded-[16px] border border-border bg-white p-4">
+          <div className="mb-4 min-w-0 rounded-[16px] border border-border bg-white p-4">
             <div className="mb-3 text-[12px] font-semibold uppercase text-auth-gray">Пересдачи по семестрам</div>
             <TrendLineChart labels={retakesTrend.map((p) => shortenPeriod(p.period))} values={retakesTrend.map((p) => p.value)} color="#a32d2d" height={200} />
           </div>

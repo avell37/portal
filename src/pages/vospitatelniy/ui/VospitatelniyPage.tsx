@@ -104,11 +104,11 @@ export default function VospitatelniyPage() {
 
         {byDirection.length > 0 && (
           <div className="mb-4 grid gap-3 sm:grid-cols-2">
-            <div className="rounded-[16px] border border-border bg-white p-4">
+            <div className="min-w-0 rounded-[16px] border border-border bg-white p-4">
               <div className="mb-3 text-[12px] font-semibold uppercase text-auth-gray">Состав зон</div>
               <DonutChart slices={zoneSlices} />
             </div>
-            <div className="rounded-[16px] border border-border bg-white p-4">
+            <div className="min-w-0 rounded-[16px] border border-border bg-white p-4">
               <div className="mb-3 text-[12px] font-semibold uppercase text-auth-gray">Зоны по направлениям</div>
               <ColumnChart categories={directionLabels} series={zoneSeries} height={180} />
             </div>
@@ -116,7 +116,7 @@ export default function VospitatelniyPage() {
         )}
 
         {riskTrend.length > 1 && (
-          <div className="mb-4 rounded-[16px] border border-border bg-white p-4">
+          <div className="mb-4 min-w-0 rounded-[16px] border border-border bg-white p-4">
             <div className="mb-3 text-[12px] font-semibold uppercase text-auth-gray">Зона риска по семестрам</div>
             <TrendLineChart labels={riskTrend.map((p) => shortenPeriod(p.period))} values={riskTrend.map((p) => p.value)} color={ZONE_COLORS.risk} height={180} />
           </div>
