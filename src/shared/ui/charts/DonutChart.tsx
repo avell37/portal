@@ -15,7 +15,7 @@ export default function DonutChart({ slices }: DonutChartProps) {
   const total = slices.reduce((s, x) => s + x.value, 0)
 
   return (
-    <div className="flex items-center gap-4">
+    <div className="flex w-full min-w-0 flex-col items-center gap-4 sm:flex-row">
       <div className="relative h-[140px] w-[140px] shrink-0">
         <Doughnut
           data={{
@@ -37,12 +37,12 @@ export default function DonutChart({ slices }: DonutChartProps) {
           }}
         />
       </div>
-      <div className="flex min-w-0 flex-1 flex-col gap-2">
+      <div className="flex w-full min-w-0 flex-col gap-2 sm:flex-1">
         {slices.map((s) => (
           <div key={s.label} className="flex items-center gap-2 text-[12px] text-auth-gray">
             <span className="h-2.5 w-2.5 shrink-0 rounded-[2px]" style={{ background: s.color }} />
-            <span className="truncate">{s.label}</span>
-            <span className="ml-auto shrink-0 font-semibold text-auth-black">
+            <span className="min-w-0 flex-1 truncate">{s.label}</span>
+            <span className="shrink-0 font-semibold text-auth-black">
               {s.value} · {total ? Math.round((s.value / total) * 100) : 0}%
             </span>
           </div>

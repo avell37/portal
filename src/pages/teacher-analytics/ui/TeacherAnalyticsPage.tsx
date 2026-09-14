@@ -116,11 +116,11 @@ function SopAnalyticsTab() {
       )}
 
       <div className="mb-4 grid gap-3 sm:grid-cols-2">
-        <div className="rounded-[16px] border border-border bg-white p-4">
+        <div className="min-w-0 rounded-[16px] border border-border bg-white p-4">
           <div className="mb-3 text-[12px] font-semibold uppercase text-auth-gray">Преподаватели по уровню оценки</div>
           <DonutChart slices={tierSlices} />
         </div>
-        <div className="rounded-[16px] border border-border bg-white p-4">
+        <div className="min-w-0 rounded-[16px] border border-border bg-white p-4">
           <div className="mb-3 text-[12px] font-semibold uppercase text-auth-gray">Лучшие и худшие по средней оценке СОП</div>
           <ColumnChart
             categories={extremes.labels}

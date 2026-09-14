@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { StatCard, Panel, PanelRow, DonutChart, ColumnChart, TrendLineChart } from '@/shared/ui'
+import { shortenPeriod } from '@/shared/lib/period'
 import { CONTINGENT, CONTINGENT_PERIODS, CURATOR_ZONES, CURATOR_ZONE_PERIODS, TEACHER_SOP, EMPLOYER_FEEDBACK } from '@/entities/metrics'
 
 const ZONE_COLORS = { risk: '#a32d2d', attention: '#854f0b', development: '#3b6d11' }
@@ -120,7 +121,7 @@ export default function DirectorPage() {
               <StatCard value={curatorTotals.development} label="Зона развития" color="var(--color-green)" />
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-[16px] border border-border bg-white p-4">
+              <div className="min-w-0 rounded-[16px] border border-border bg-white p-4">
                 <div className="mb-3 text-[12px] font-semibold uppercase text-auth-gray">Состав зон</div>
                 <DonutChart slices={zoneSlices} />
               </div>
@@ -132,9 +133,9 @@ export default function DirectorPage() {
               </Panel>
             </div>
             {riskTrend.length > 1 && (
-              <div className="rounded-[16px] border border-border bg-white p-4">
+              <div className="min-w-0 rounded-[16px] border border-border bg-white p-4">
                 <div className="mb-3 text-[12px] font-semibold uppercase text-auth-gray">Зона риска по семестрам</div>
-                <TrendLineChart labels={riskTrend.map((p) => p.period)} values={riskTrend.map((p) => p.value)} color={ZONE_COLORS.risk} height={180} />
+                <TrendLineChart labels={riskTrend.map((p) => shortenPeriod(p.period))} values={riskTrend.map((p) => p.value)} color={ZONE_COLORS.risk} height={180} />
               </div>
             )}
           </div>
@@ -156,7 +157,7 @@ export default function DirectorPage() {
               </Panel>
             </div>
             {contingentByDirection.length > 0 && (
-              <div className="rounded-[16px] border border-border bg-white p-4">
+              <div className="min-w-0 rounded-[16px] border border-border bg-white p-4">
                 <div className="mb-3 text-[12px] font-semibold uppercase text-auth-gray">Студентов по направлениям</div>
                 <ColumnChart
                   categories={contingentByDirection.map(([direction]) => direction)}

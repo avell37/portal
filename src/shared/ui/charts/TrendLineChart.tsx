@@ -1,5 +1,6 @@
 import { Line } from 'react-chartjs-2'
 import { CHART_GRID, CHART_MUTED } from './chartSetup'
+import { useChartResize } from './useChartResize'
 import './chartSetup'
 
 interface TrendLineChartProps {
@@ -11,9 +12,11 @@ interface TrendLineChartProps {
 }
 
 export default function TrendLineChart({ labels, values, color, height = 200, formatValue = (v) => String(v) }: TrendLineChartProps) {
+  const { wrapperRef, chartKey } = useChartResize()
   return (
-    <div className="relative" style={{ height }}>
+    <div ref={wrapperRef} className="relative w-full min-w-0 max-w-full overflow-hidden" style={{ height }}>
       <Line
+        key={chartKey}
         data={{
           labels,
           datasets: [

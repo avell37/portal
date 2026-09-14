@@ -1,5 +1,6 @@
 import { Bar } from 'react-chartjs-2'
 import { CHART_GRID, CHART_MUTED } from './chartSetup'
+import { useChartResize } from './useChartResize'
 import './chartSetup'
 
 export interface ColumnSeries {
@@ -17,6 +18,7 @@ interface ColumnChartProps {
 }
 
 export default function ColumnChart({ categories, series, height = 200, formatValue = (v) => String(v), horizontal = false }: ColumnChartProps) {
+  const { wrapperRef, chartKey } = useChartResize()
   const valueAxis = {
     grid: { color: CHART_GRID },
     ticks: { color: CHART_MUTED, font: { family: 'Montserrat', size: 11 }, callback: (v: string | number) => formatValue(Number(v)) },
@@ -25,7 +27,7 @@ export default function ColumnChart({ categories, series, height = 200, formatVa
   const categoryAxis = { grid: { display: false }, ticks: { color: CHART_MUTED, font: { family: 'Montserrat', size: 11 } } }
 
   return (
-    <div>
+    <div className="w-full min-w-0">
       {series.length > 1 && (
         <div className="mb-3 flex flex-wrap gap-4">
           {series.map((s) => (
@@ -36,8 +38,9 @@ export default function ColumnChart({ categories, series, height = 200, formatVa
           ))}
         </div>
       )}
-      <div className="relative" style={{ height }}>
+      <div ref={wrapperRef} className="relative w-full min-w-0 max-w-full overflow-hidden" style={{ height }}>
         <Bar
+          key={chartKey}
           data={{
             labels: categories,
             datasets: series.map((s) => ({

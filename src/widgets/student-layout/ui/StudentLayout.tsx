@@ -1,88 +1,30 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { useState } from "react";
+import { Outlet } from "react-router-dom";
 import { Bell, CalendarClock, FileEdit, Home } from "lucide-react";
 import { useAuth } from "@/entities/session";
 import { AppTopbar } from "@/widgets/app-topbar";
-import logo from "@/shared/assets/images/logo.png";
+import { AppSidebar } from "@/widgets/app-sidebar";
 
 const NAV_ITEMS = [
     { path: "/student", label: "Главная", icon: Home, end: true },
     { path: "/student/retakes", label: "Пересдачи", icon: CalendarClock },
     { path: "/student/tickets", label: "Заявки", icon: FileEdit },
     { path: "/student/notifications", label: "Уведомления", icon: Bell },
-] as const;
-
-const BADGE_COLORS = [
-    { bg: "var(--color-blue-light)", fg: "var(--color-blue)" },
-    { bg: "var(--color-purple-light)", fg: "var(--color-purple)" },
-    { bg: "var(--color-amber-light)", fg: "var(--color-amber)" },
-] as const;
+];
 
 export default function StudentLayout() {
     const currentUser = useAuth((s) => s.currentUser);
+    const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
     if (!currentUser) return null;
 
     return (
         <div className="flex min-h-screen bg-auth-bg">
-            <aside className="flex w-60 shrink-0 flex-col bg-auth-bg px-4 py-5">
-                <div className="mb-8 flex items-center px-2">
-                    <img
-                        src={logo}
-                        alt="IThub"
-                        width={167}
-                        height={64}
-                        className="h-16 mr-auto w-auto"
-                    />
-                </div>
-
-                <nav className="flex flex-col gap-1.5">
-                    {NAV_ITEMS.map((item, i) => {
-                        const Icon = item.icon;
-                        const badge = BADGE_COLORS[i % BADGE_COLORS.length]!;
-                        return (
-                            <NavLink
-                                key={item.path}
-                                to={item.path}
-                                end={"end" in item ? item.end : undefined}
-                                className={({ isActive }) =>
-                                    `flex items-center gap-3 rounded-[14px] px-3 py-2.5 text-[14px] font-medium transition-colors ${
-                                        isActive
-                                            ? "bg-auth-primary text-white"
-                                            : "text-auth-black hover:bg-auth-bg"
-                                    }`
-                                }
-                            >
-                                {({ isActive }) => (
-                                    <>
-                                        <span
-                                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px]"
-                                            style={{
-                                                background: isActive
-                                                    ? "rgba(255,255,255,0.2)"
-                                                    : badge.bg,
-                                            }}
-                                        >
-                                            <Icon
-                                                size={16}
-                                                color={
-                                                    isActive
-                                                        ? "white"
-                                                        : badge.fg
-                                                }
-                                            />
-                                        </span>
-                                        {item.label}
-                                    </>
-                                )}
-                            </NavLink>
-                        );
-                    })}
-                </nav>
-            </aside>
+            <AppSidebar items={NAV_ITEMS} isOpen={mobileNavOpen} onClose={() => setMobileNavOpen(false)} />
 
             <div className="flex min-w-0 flex-1 flex-col bg-auth-bg">
-                <AppTopbar />
-                <main className="flex-1 overflow-y-auto bg-white p-8 rounded-xl">
+                <AppTopbar onMenuClick={() => setMobileNavOpen(true)} />
+                <main className="flex-1 overflow-y-auto rounded-xl bg-white p-4 sm:p-8">
                     <Outlet />
                 </main>
             </div>
