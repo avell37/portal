@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { CONTINGENT, CONTINGENT_PERIODS } from '@/entities/metrics'
 import { ColumnChart, TrendLineChart } from '@/shared/ui'
+import { shortenPeriod } from '@/shared/lib/period'
 
 const LATEST_PERIOD_WITH_DATA = [...CONTINGENT_PERIODS].reverse().find((p) => CONTINGENT.some((r) => r.period === p && r.avgGrade !== null)) ?? CONTINGENT_PERIODS[0]!
 
@@ -107,7 +108,7 @@ export default function UchebnyPage() {
         {retakesTrend.length > 1 && (
           <div className="mb-4 rounded-[16px] border border-border bg-white p-4">
             <div className="mb-3 text-[12px] font-semibold uppercase text-auth-gray">Пересдачи по семестрам</div>
-            <TrendLineChart labels={retakesTrend.map((p) => p.period)} values={retakesTrend.map((p) => p.value)} color="#a32d2d" height={200} />
+            <TrendLineChart labels={retakesTrend.map((p) => shortenPeriod(p.period))} values={retakesTrend.map((p) => p.value)} color="#a32d2d" height={200} />
           </div>
         )}
 
