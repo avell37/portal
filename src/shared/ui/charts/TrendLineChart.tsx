@@ -12,7 +12,7 @@ interface TrendLineChartProps {
 
 export default function TrendLineChart({ labels, values, color, height = 200, formatValue = (v) => String(v) }: TrendLineChartProps) {
   return (
-    <div className="relative" style={{ height }}>
+    <div className="relative w-full min-w-0 max-w-full overflow-hidden" style={{ height }}>
       <Line
         data={{
           labels,

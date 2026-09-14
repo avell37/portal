@@ -25,7 +25,7 @@ export default function ColumnChart({ categories, series, height = 200, formatVa
   const categoryAxis = { grid: { display: false }, ticks: { color: CHART_MUTED, font: { family: 'Montserrat', size: 11 } } }
 
   return (
-    <div>
+    <div className="w-full min-w-0">
       {series.length > 1 && (
         <div className="mb-3 flex flex-wrap gap-4">
           {series.map((s) => (
@@ -36,7 +36,7 @@ export default function ColumnChart({ categories, series, height = 200, formatVa
           ))}
         </div>
       )}
-      <div className="relative" style={{ height }}>
+      <div className="relative w-full min-w-0 max-w-full overflow-hidden" style={{ height }}>
         <Bar
           data={{
             labels: categories,

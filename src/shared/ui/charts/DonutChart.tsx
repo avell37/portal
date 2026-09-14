@@ -15,7 +15,7 @@ export default function DonutChart({ slices }: DonutChartProps) {
   const total = slices.reduce((s, x) => s + x.value, 0)
 
   return (
-    <div className="flex flex-col items-center gap-4 sm:flex-row">
+    <div className="flex w-full min-w-0 flex-col items-center gap-4 sm:flex-row">
       <div className="relative h-[140px] w-[140px] shrink-0">
         <Doughnut
           data={{
