@@ -25,7 +25,7 @@ export default function AppTopbar({ onMenuClick }: AppTopbarProps) {
     }
 
     return (
-        <header className="flex items-center justify-between gap-4 px-4 py-3.5 sm:px-8">
+        <header className="flex items-center gap-4 px-4 py-3.5 sm:px-8">
             <button
                 type="button"
                 aria-label="Открыть меню"
@@ -35,7 +35,7 @@ export default function AppTopbar({ onMenuClick }: AppTopbarProps) {
                 <Menu size={20} />
             </button>
 
-            <div className="flex items-center gap-4 max-md:ml-auto">
+            <div className="ml-auto flex items-center gap-4">
             <button
                 type="button"
                 aria-label="Уведомления"
