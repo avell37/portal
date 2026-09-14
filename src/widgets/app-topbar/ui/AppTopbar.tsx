@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { Bell, ChevronDown, LogOut, User } from "lucide-react";
+import { Bell, ChevronDown, LogOut, Menu, User } from "lucide-react";
 import { useAuth } from "@/entities/session";
 
 function getInitials(fullName: string) {
@@ -8,7 +8,11 @@ function getInitials(fullName: string) {
     return (parts[0]?.[0] ?? "") + (parts[1]?.[0] ?? "");
 }
 
-export default function AppTopbar() {
+interface AppTopbarProps {
+    onMenuClick?: () => void;
+}
+
+export default function AppTopbar({ onMenuClick }: AppTopbarProps) {
     const currentUser = useAuth((s) => s.currentUser);
     const logout = useAuth((s) => s.logout);
     const navigate = useNavigate();
@@ -21,7 +25,17 @@ export default function AppTopbar() {
     }
 
     return (
-        <header className="flex items-center justify-end gap-4 px-8 py-3.5">
+        <header className="flex items-center justify-between gap-4 px-4 py-3.5 sm:px-8">
+            <button
+                type="button"
+                aria-label="Открыть меню"
+                onClick={onMenuClick}
+                className="flex h-10 w-10 items-center justify-center rounded-full text-auth-gray transition-colors hover:bg-auth-bg md:hidden"
+            >
+                <Menu size={20} />
+            </button>
+
+            <div className="flex items-center gap-4 max-md:ml-auto">
             <button
                 type="button"
                 aria-label="Уведомления"
@@ -73,6 +87,7 @@ export default function AppTopbar() {
                     </DropdownMenu.Content>
                 </DropdownMenu.Portal>
             </DropdownMenu.Root>
+            </div>
         </header>
     );
 }
