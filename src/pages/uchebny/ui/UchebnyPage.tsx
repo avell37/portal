@@ -2,6 +2,11 @@ import { useMemo, useState } from 'react'
 import { CONTINGENT, CONTINGENT_PERIODS } from '@/entities/metrics'
 import { ColumnChart, TrendLineChart } from '@/shared/ui'
 import { shortenPeriod } from '@/shared/lib/period'
+import { useAuth } from '@/entities/session'
+import { RETAKE_STUDENTS } from '@/entities/retake'
+import { GROUPS } from '@/entities/group-student'
+import RetakesList from './RetakesList'
+import RetakeStudentCard from './RetakeStudentCard'
 
 const LATEST_PERIOD_WITH_DATA = [...CONTINGENT_PERIODS].reverse().find((p) => CONTINGENT.some((r) => r.period === p && r.avgGrade !== null)) ?? CONTINGENT_PERIODS[0]!
 
@@ -9,7 +14,37 @@ function fmt(v: number | null, digits = 1) {
   return v === null ? '—' : v.toFixed(digits)
 }
 
+const TOP_TABS = [
+  { id: 'retakes', label: 'Пересдачи' },
+  { id: 'summary', label: 'Сводная аналитика' },
+] as const
+
+type TopTab = (typeof TOP_TABS)[number]['id']
+
+function RetakesSection() {
+  const currentUser = useAuth((s) => s.currentUser)
+  const [studentId, setStudentId] = useState<number | null>(null)
+  // Куратор видит пересдачи только своих студентов (в демо-данных группа
+  // куратора не привязана к логину — берём первую группу, как и в
+  // Воспитательном отделе); директор/рук. учебного видят всех.
+  const isCurator = currentUser?.role === 'curator'
+  const students = isCurator ? RETAKE_STUDENTS.filter((s) => s.group === GROUPS[0]!.name) : RETAKE_STUDENTS
+
+  if (studentId !== null) {
+    return <RetakeStudentCard studentId={studentId} canNotify={isCurator} onBack={() => setStudentId(null)} />
+  }
+  return (
+    <RetakesList
+      students={students}
+      canFormList={currentUser?.role === 'uchebny_head'}
+      onFormList={() => {}}
+      onSelectStudent={setStudentId}
+    />
+  )
+}
+
 export default function UchebnyPage() {
+  const [topTab, setTopTab] = useState<TopTab>('retakes')
   const [period, setPeriod] = useState(LATEST_PERIOD_WITH_DATA)
 
   const rows = useMemo(() => CONTINGENT.filter((r) => r.period === period), [period])
@@ -48,7 +83,7 @@ export default function UchebnyPage() {
     [byDirection],
   )
   const attendanceSeries = useMemo(
-    () => [{ label: 'Посещаемость', color: '#185fa5', values: byDirection.map((d) => d.attendance ?? 0) }],
+    () => [{ label: 'Посещаемость', color: '#3280fc', values: byDirection.map((d) => d.attendance ?? 0) }],
     [byDirection],
   )
   const hasAttendance = byDirection.some((d) => d.attendance !== null)
@@ -67,6 +102,25 @@ export default function UchebnyPage() {
       <h1 className="text-[22px] font-semibold text-auth-black">Учебный отдел</h1>
       <p className="mt-1 text-[14px] text-auth-gray">Контингент · Пересдачи · Посещаемость по направлениям</p>
 
+      <div className="mt-6">
+        <div className="mb-4 flex flex-wrap gap-2">
+          {TOP_TABS.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setTopTab(t.id)}
+              className={`rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition-colors ${
+                topTab === t.id ? 'bg-auth-primary text-white' : 'bg-gray-light text-gray hover:opacity-80'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {topTab === 'retakes' && <RetakesSection />}
+      </div>
+
+      {topTab === 'summary' && (
       <div className="mt-6">
         <div className="mb-4 flex flex-wrap gap-2">
           {CONTINGENT_PERIODS.map((p) => (
@@ -152,6 +206,7 @@ export default function UchebnyPage() {
           </table>
         </div>
       </div>
+      )}
     </div>
   )
 }

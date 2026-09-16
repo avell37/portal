@@ -9,3 +9,6 @@ export type { CuratorZoneEntry } from './model/curator-zones'
 
 export { EMPLOYER_FEEDBACK } from './model/employer-feedback'
 export type { EmployerFeedbackEntry } from './model/employer-feedback'
+
+export { TEACHER_PERIOD_SUMMARY } from './model/teacher-period-summary'
+export type { TeacherPeriodSummary } from './model/teacher-period-summary'
