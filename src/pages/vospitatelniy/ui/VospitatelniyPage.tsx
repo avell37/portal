@@ -2,10 +2,48 @@ import { useMemo, useState } from 'react'
 import { CURATOR_ZONES, CURATOR_ZONE_PERIODS } from '@/entities/metrics'
 import { DonutChart, ColumnChart, TrendLineChart } from '@/shared/ui'
 import { shortenPeriod } from '@/shared/lib/period'
+import { useAuth } from '@/entities/session'
+import { GROUPS } from '@/entities/group-student'
+import GroupsList from './GroupsList'
+import GroupView from './GroupView'
+import StudentCard from './StudentCard'
 
-const ZONE_COLORS = { risk: '#a32d2d', attention: '#854f0b', development: '#3b6d11' }
+const ZONE_COLORS = { risk: '#a32d2d', attention: '#eba237', development: '#438e4d' }
+
+const TOP_TABS = [
+  { id: 'groups', label: 'Группы' },
+  { id: 'summary', label: 'Сводная аналитика' },
+] as const
+
+type TopTab = (typeof TOP_TABS)[number]['id']
+
+function GroupsSection() {
+  const currentUser = useAuth((s) => s.currentUser)
+  // Куратор видит только свою группу (в демо-данных группа/куратор не
+  // привязаны к конкретному логину — берём первую, как и в исходном
+  // прототипе); директор и рук. воспитательного видят все группы.
+  const canAll = currentUser?.role === 'director' || currentUser?.role === 'vospitatelny_head'
+  const [groupName, setGroupName] = useState<string | null>(canAll ? null : GROUPS[0]!.name)
+  const [studentId, setStudentId] = useState<number | null>(null)
+
+  if (studentId !== null) {
+    return <StudentCard studentId={studentId} canAddTalk={currentUser?.role === 'curator'} onBack={() => setStudentId(null)} />
+  }
+  if (groupName) {
+    return (
+      <GroupView
+        groupName={groupName}
+        showBack={canAll}
+        onBack={() => setGroupName(null)}
+        onSelectStudent={setStudentId}
+      />
+    )
+  }
+  return <GroupsList onSelectGroup={setGroupName} />
+}
 
 export default function VospitatelniyPage() {
+  const [topTab, setTopTab] = useState<TopTab>('groups')
   const [period, setPeriod] = useState(CURATOR_ZONE_PERIODS[CURATOR_ZONE_PERIODS.length - 1]!)
 
   const rows = useMemo(() => CURATOR_ZONES.filter((r) => r.period === period), [period])
@@ -62,8 +100,27 @@ export default function VospitatelniyPage() {
   return (
     <div>
       <h1 className="text-[22px] font-semibold text-auth-black">Воспитательный отдел</h1>
-      <p className="mt-1 text-[14px] text-auth-gray">Зоны успеваемости по направлениям · Кураторские отчёты</p>
+      <p className="mt-1 text-[14px] text-auth-gray">Группы и студенты · Зоны успеваемости по направлениям · Кураторские отчёты</p>
 
+      <div className="mt-6">
+        <div className="mb-4 flex flex-wrap gap-2">
+          {TOP_TABS.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setTopTab(t.id)}
+              className={`rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition-colors ${
+                topTab === t.id ? 'bg-auth-primary text-white' : 'bg-gray-light text-gray hover:opacity-80'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {topTab === 'groups' && <GroupsSection />}
+      </div>
+
+      {topTab === 'summary' && (
       <div className="mt-6">
         <div className="mb-4 flex flex-wrap gap-2">
           {CURATOR_ZONE_PERIODS.map((p) => (
@@ -162,6 +219,7 @@ export default function VospitatelniyPage() {
           </table>
         </div>
       </div>
+      )}
     </div>
   )
 }

@@ -22,7 +22,7 @@ const NAV_ITEMS = [
         path: "/uchebny",
         label: "Учебный отдел",
         icon: BookOpen,
-        roles: ["director", "uchebny_head"],
+        roles: ["director", "uchebny_head", "curator"],
     },
     {
         path: "/teacher-analytics",
