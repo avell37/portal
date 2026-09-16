@@ -13,26 +13,29 @@
     --color-auth-border: #848484;
     --color-auth-error: #d80000;
 
-    --color-purple: #534ab7;
+    /* Фирменный фиолетовый — как в Figma (IThub), тот же цвет, что уже был
+       в --color-auth-* (эти токены раньше использовались только на
+       странице логина, теперь весь портал сведён к одному фиолетовому). */
+    --color-purple: #9a33f4;
     --color-purple-light: #eeedfe;
-    --color-purple-dark: #3c3489;
-    --color-purple-deep: #26215c;
+    --color-purple-dark: #7e2dc7;
+    --color-purple-deep: #511d81;
 
     --color-teal: #0f6e56;
     --color-teal-light: #e1f5ee;
 
-    --color-amber: #854f0b;
-    --color-amber-light: #faeeda;
-    --color-amber-deep: #6b3e08;
+    --color-amber: #eba237;
+    --color-amber-light: #feebd4;
+    --color-amber-deep: #81591e;
 
     --color-red: #a32d2d;
     --color-red-light: #fcebeb;
 
-    --color-blue: #185fa5;
+    --color-blue: #3280fc;
     --color-blue-light: #e6f1fb;
 
-    --color-green: #3b6d11;
-    --color-green-light: #eaf3de;
+    --color-green: #438e4d;
+    --color-green-light: #e8f6e7;
 
     --color-coral: #712b13;
     --color-coral-light: #faece7;

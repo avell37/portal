@@ -1,6 +1,9 @@
 export { default as CoverHeader } from "./CoverHeader";
 export { default as Panel, PanelRow } from "./Panel";
 export { default as StatCard } from "./StatCard";
+export { default as ExportButton } from "./ExportButton";
+export { default as PeriodComparison } from "./PeriodComparison";
+export type { ComparisonMetric } from "./PeriodComparison";
 export { default as PlaceholderPage } from "./PlaceholderPage";
 export { DonutChart, ColumnChart, TrendLineChart } from "./charts";
 export type { DonutSlice, ColumnSeries } from "./charts";
