@@ -6,18 +6,33 @@ import { ITSupportPage } from "@/pages/it-support";
 import { UchebnyPage } from "@/pages/uchebny";
 import { TeacherAnalyticsPage } from "@/pages/teacher-analytics";
 import { VospitatelniyPage } from "@/pages/vospitatelniy";
+import { ProfilePage } from "@/pages/profile";
 import { StudentPage } from "@/pages/student";
+import MyRetakesPage from "@/pages/student/ui/MyRetakesPage";
+import MyTicketsPage from "@/pages/student/ui/MyTicketsPage";
+import MyNotificationsPage from "@/pages/student/ui/MyNotificationsPage";
 import { DashboardLayout } from "@/widgets/dashboard-layout";
 import { StudentLayout } from "@/widgets/student-layout";
 import { useAuth } from "@/entities/session";
 import { ROLES } from "@/entities/user";
-import { PlaceholderPage } from "@/shared/ui";
 import ProtectedRoute from "./providers/ProtectedRoute";
 
 function Home() {
     const currentUser = useAuth((s) => s.currentUser);
     if (!currentUser) return <Navigate to="/login" replace />;
     return <Navigate to={ROLES[currentUser.role].dashboardPath} replace />;
+}
+
+/** /profile — единственный маршрут, общий сразу для всех ролей (не привязан
+ * к дашборду сотрудников или кабинету студента). DashboardLayout/StudentLayout
+ * сами рендерят свой <Outlet/>, поэтому просто выбираем нужную оболочку по
+ * роли, а не дублируем один и тот же path в двух ветках роутов — с
+ * одинаковым абсолютным path в двух местах react-router оставит достижимой
+ * только первую и всегда покажет ту же оболочку независимо от роли. */
+function ProfileLayout() {
+    const currentUser = useAuth((s) => s.currentUser);
+    if (!currentUser) return null;
+    return currentUser.role === "student" ? <StudentLayout /> : <DashboardLayout />;
 }
 
 export default function App() {
@@ -52,18 +67,22 @@ export default function App() {
                 }
             >
                 <Route path="/student" element={<StudentPage />} />
-                <Route
-                    path="/student/retakes"
-                    element={<PlaceholderPage title="Пересдачи" />}
-                />
-                <Route
-                    path="/student/tickets"
-                    element={<PlaceholderPage title="Заявки" />}
-                />
+                <Route path="/student/retakes" element={<MyRetakesPage />} />
+                <Route path="/student/tickets" element={<MyTicketsPage />} />
                 <Route
                     path="/student/notifications"
-                    element={<PlaceholderPage title="Уведомления" />}
+                    element={<MyNotificationsPage />}
                 />
+            </Route>
+
+            <Route
+                element={
+                    <ProtectedRoute>
+                        <ProfileLayout />
+                    </ProtectedRoute>
+                }
+            >
+                <Route path="/profile" element={<ProfilePage />} />
             </Route>
 
             <Route path="*" element={<Navigate to="/" replace />} />
