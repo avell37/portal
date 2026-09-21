@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { GROUPS, STUDENTS, studentZone } from "@/entities/group-student";
+import CuratorActivityPanel from "./CuratorActivityPanel";
 
 export default function GroupsList({ onSelectGroup }: { onSelectGroup: (group: string) => void }) {
     const totals = useMemo(() => {
@@ -79,6 +80,10 @@ export default function GroupsList({ onSelectGroup }: { onSelectGroup: (group: s
                         ))}
                     </tbody>
                 </table>
+            </div>
+
+            <div className="mt-4">
+                <CuratorActivityPanel />
             </div>
         </div>
     );

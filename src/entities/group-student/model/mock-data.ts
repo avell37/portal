@@ -4,9 +4,12 @@ import type { Group, Student } from "./types";
 // детализации нет в реальной гугл-таблице (там только агрегаты по
 // направлению/курсу, см. CURATOR_ZONES), поэтому группы/студенты/КТ ниже
 // придуманы для демонстрации сценария, как и DEMO_USERS.
+// Demo-куратор (curator@ithub.demo) ведёт две группы — ИТ-23 и ИБ-24, чтобы
+// был сценарий с переключателем; ИТ-24 закреплена за другим (невходящим в
+// демо) куратором, curatorEmail не задан.
 export const GROUPS: Group[] = [
-    { name: "ИТ-23", curator: "Морозова Е. В." },
-    { name: "ИБ-24", curator: "Петров А. С." },
+    { name: "ИТ-23", curator: "Морозова Е. В.", curatorEmail: "curator@ithub.demo" },
+    { name: "ИБ-24", curator: "Петров А. С.", curatorEmail: "curator@ithub.demo" },
     { name: "ИТ-24", curator: "Козлова Н. А." },
 ];
 

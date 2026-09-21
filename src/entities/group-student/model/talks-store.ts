@@ -62,3 +62,10 @@ function getSnapshotForStudent(studentId: number): Talk[] {
 export function useTalksForStudent(studentId: number): Talk[] {
     return useSyncExternalStore(subscribe, () => getSnapshotForStudent(studentId));
 }
+
+/** Все записи разом — для «Активности кураторов» (см. ou-store.ts,
+ * useOuRecords — тот же приём, `talks` стабилен между рендерами,
+ * переприсваивается только в persist()). */
+export function useAllTalks(): Talk[] {
+    return useSyncExternalStore(subscribe, () => talks);
+}
