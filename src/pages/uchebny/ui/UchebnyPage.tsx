@@ -7,6 +7,8 @@ import { RETAKE_STUDENTS } from '@/entities/retake'
 import { GROUPS } from '@/entities/group-student'
 import RetakesList from './RetakesList'
 import RetakeStudentCard from './RetakeStudentCard'
+import TasksPanel from './TasksPanel'
+import BulkResultsPanel from './BulkResultsPanel'
 
 const LATEST_PERIOD_WITH_DATA = [...CONTINGENT_PERIODS].reverse().find((p) => CONTINGENT.some((r) => r.period === p && r.avgGrade !== null)) ?? CONTINGENT_PERIODS[0]!
 
@@ -24,22 +26,35 @@ type TopTab = (typeof TOP_TABS)[number]['id']
 function RetakesSection() {
   const currentUser = useAuth((s) => s.currentUser)
   const [studentId, setStudentId] = useState<number | null>(null)
-  // Куратор видит пересдачи только своих студентов (в демо-данных группа
-  // куратора не привязана к логину — берём первую группу, как и в
-  // Воспитательном отделе); директор/рук. учебного видят всех.
+  // Куратор видит пересдачи только своих студентов — по всем группам,
+  // закреплённым за ним (curatorEmail), как и в Воспитательном отделе.
   const isCurator = currentUser?.role === 'curator'
-  const students = isCurator ? RETAKE_STUDENTS.filter((s) => s.group === GROUPS[0]!.name) : RETAKE_STUDENTS
+  const myGroupNames = currentUser ? GROUPS.filter((g) => g.curatorEmail === currentUser.email).map((g) => g.name) : []
+  const students = isCurator
+    ? RETAKE_STUDENTS.filter((s) => (myGroupNames.length ? myGroupNames.includes(s.group) : s.group === GROUPS[0]!.name))
+    : RETAKE_STUDENTS
 
   if (studentId !== null) {
-    return <RetakeStudentCard studentId={studentId} canNotify={isCurator} onBack={() => setStudentId(null)} />
+    return (
+      <RetakeStudentCard
+        studentId={studentId}
+        canNotify={isCurator}
+        canRecordResult={currentUser?.role === 'uchebny_head'}
+        onBack={() => setStudentId(null)}
+      />
+    )
   }
   return (
-    <RetakesList
-      students={students}
-      canFormList={currentUser?.role === 'uchebny_head'}
-      onFormList={() => {}}
-      onSelectStudent={setStudentId}
-    />
+    <div className="space-y-4">
+      <TasksPanel />
+      {currentUser?.role === 'uchebny_head' && <BulkResultsPanel />}
+      <RetakesList
+        students={students}
+        canFormList={currentUser?.role === 'uchebny_head'}
+        onFormList={() => {}}
+        onSelectStudent={setStudentId}
+      />
+    </div>
   )
 }
 

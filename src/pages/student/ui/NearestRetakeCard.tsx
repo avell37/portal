@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import type { RetakeItem } from '@/entities/retake'
+import { useTaskForSubject } from '@/entities/retake'
 import { splitDateTime, latestAttempt } from './retakeDisplay'
 
 export default function NearestRetakeCard({ item }: { item: RetakeItem | undefined }) {
   const [opened, setOpened] = useState(false)
+  const task = useTaskForSubject(item?.subject ?? '')
 
   if (!item) {
     return (
@@ -49,7 +51,7 @@ export default function NearestRetakeCard({ item }: { item: RetakeItem | undefin
       </button>
       {opened && (
         <div className="mt-2 text-center text-[11px] text-auth-gray">
-          Задание пока не загружено преподавателем
+          {task ? `📎 ${task.fileName} · загружено ${task.uploadedAt}` : 'Задание пока не загружено преподавателем'}
         </div>
       )}
     </div>
