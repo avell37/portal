@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { CalendarClock, Bell, CalendarCheck } from 'lucide-react'
 import { useAuth } from '@/entities/session'
 import { findStudentByFullName } from '@/entities/group-student'
-import { findRetakeStudentByFullName } from '@/entities/retake'
+import { findRetakeStudentByFullName, useEffectiveItems } from '@/entities/retake'
 import { useTickets } from '@/entities/ticket'
 import StudentCard from '@/pages/vospitatelniy/ui/StudentCard'
 import SopSurvey from './SopSurvey'
@@ -38,8 +38,9 @@ export default function StudentPage() {
   )
   const performance = currentUser ? findStudentByFullName(currentUser.fullName) : undefined
   const retakeStudent = currentUser ? findRetakeStudentByFullName(currentUser.fullName) : undefined
+  const retakeItems = useEffectiveItems(retakeStudent?.id ?? -1)
   const myTicketsCount = useTickets().filter((t) => t.authorEmail === currentUser?.email).length
-  const nearestItem = retakeStudent ? findNearestItem(retakeStudent.items) : undefined
+  const nearestItem = findNearestItem(retakeItems)
   const nearestDate = nearestItem ? splitDateTime(latestAttempt(nearestItem).date).date : '—'
 
   function finishSurvey() {
@@ -119,7 +120,7 @@ export default function StudentPage() {
           </div>
 
           <div className="mt-4">
-            <AllRetakesTable items={retakeStudent?.items ?? []} />
+            <AllRetakesTable items={retakeItems} />
           </div>
 
           <div className="mt-6 border-t border-border pt-6">

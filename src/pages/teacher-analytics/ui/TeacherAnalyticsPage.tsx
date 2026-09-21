@@ -62,9 +62,33 @@ function OuSection() {
   )
 }
 
+const TIER_OPTIONS = [
+  { id: 'all', label: 'Все оценки' },
+  { id: 'good', label: 'Хорошо (≥ 4.0)' },
+  { id: 'warn', label: 'Средне (3.1–3.9)' },
+  { id: 'bad', label: 'Низко (< 3.1)' },
+] as const
+
+function inTier(overall: number, tier: (typeof TIER_OPTIONS)[number]['id']) {
+  if (tier === 'good') return overall >= 4
+  if (tier === 'warn') return overall >= 3.1 && overall < 4
+  if (tier === 'bad') return overall < 3.1
+  return true
+}
+
 function SopAnalyticsTab() {
   const currentUser = useAuth((s) => s.currentUser)
   const [launched, setLaunched] = useState(false)
+  // Реального "направления"/"курса" в данных СОП нет (только имя
+  // преподавателя и список его предметов) — два одновременных фильтра
+  // строим на том, что реально есть: предмет + уровень оценки.
+  const [subjectFilter, setSubjectFilter] = useState('all')
+  const [tierFilter, setTierFilter] = useState<(typeof TIER_OPTIONS)[number]['id']>('all')
+  const subjectOptions = useMemo(() => Array.from(new Set(TEACHER_SOP.flatMap((t) => t.subjects))).sort(), [])
+  const filteredSop = useMemo(
+    () => TEACHER_SOP.filter((t) => (subjectFilter === 'all' || t.subjects.includes(subjectFilter)) && inTier(t.overall, tierFilter)),
+    [subjectFilter, tierFilter],
+  )
   const critical = TEACHER_SOP.filter((t) => t.interest <= 3 || t.delivery <= 3 || t.feedback <= 3 || t.comfort <= 3)
 
   const extremes = useMemo(() => {
@@ -115,6 +139,28 @@ function SopAnalyticsTab() {
         </div>
       </div>
 
+      <div className="mb-3 flex flex-wrap gap-2">
+        <select
+          value={subjectFilter}
+          onChange={(e) => setSubjectFilter(e.target.value)}
+          className="rounded-[10px] border border-border bg-white px-3 py-2 text-[13px] outline-none focus:border-auth-primary"
+        >
+          <option value="all">Все предметы</option>
+          {subjectOptions.map((s) => (
+            <option key={s} value={s}>{s}</option>
+          ))}
+        </select>
+        <select
+          value={tierFilter}
+          onChange={(e) => setTierFilter(e.target.value as (typeof TIER_OPTIONS)[number]['id'])}
+          className="rounded-[10px] border border-border bg-white px-3 py-2 text-[13px] outline-none focus:border-auth-primary"
+        >
+          {TIER_OPTIONS.map((t) => (
+            <option key={t.id} value={t.id}>{t.label}</option>
+          ))}
+        </select>
+      </div>
+
       <div className="overflow-x-auto rounded-[16px] border border-border bg-white">
         <table className="w-full text-left text-[13px]">
           <thead>
@@ -128,7 +174,7 @@ function SopAnalyticsTab() {
             </tr>
           </thead>
           <tbody>
-            {TEACHER_SOP.map((t) => (
+            {filteredSop.map((t) => (
               <tr key={t.name} className="border-b border-border last:border-none">
                 <td className="px-4 py-2.5">
                   <div className="font-semibold text-auth-black">{t.name}</div>
@@ -141,6 +187,11 @@ function SopAnalyticsTab() {
                 <td className="px-3 py-2.5 font-bold" style={{ color: scoreColor(t.overall) }}>{t.overall}</td>
               </tr>
             ))}
+            {filteredSop.length === 0 && (
+              <tr>
+                <td colSpan={6} className="px-4 py-8 text-center text-auth-gray">Нет преподавателей под этот фильтр</td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

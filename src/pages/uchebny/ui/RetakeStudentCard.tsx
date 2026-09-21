@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { AttemptResult } from "@/entities/retake";
-import { RETAKE_STUDENTS, notifyStudent, useNotificationsForStudent } from "@/entities/retake";
+import { RETAKE_STUDENTS, notifyStudent, useNotificationsForStudent, useEffectiveItems, recordResult } from "@/entities/retake";
 
 const RESULT_LABEL: Record<AttemptResult, string> = {
     passed: "Сдал",
@@ -19,21 +19,23 @@ const RESULT_CLASS: Record<AttemptResult, string> = {
 interface RetakeStudentCardProps {
     studentId: number;
     canNotify: boolean;
+    canRecordResult?: boolean;
     onBack?: () => void;
 }
 
-export default function RetakeStudentCard({ studentId, canNotify, onBack }: RetakeStudentCardProps) {
+export default function RetakeStudentCard({ studentId, canNotify, canRecordResult, onBack }: RetakeStudentCardProps) {
     const student = RETAKE_STUDENTS.find((s) => s.id === studentId)!;
+    const items = useEffectiveItems(studentId);
     const [openSubject, setOpenSubject] = useState<string | null>(null);
     const [notified, setNotified] = useState(false);
     const notifs = useNotificationsForStudent(studentId);
-    const onSecondAttempt = student.items.filter((i) => {
+    const onSecondAttempt = items.filter((i) => {
         const latest = i.attempts[i.attempts.length - 1];
         return latest && latest.num >= 2 && latest.result !== "passed";
     }).length;
 
     function handleNotify() {
-        const subjects = student.items.map((i) => i.subject).join(", ");
+        const subjects = items.map((i) => i.subject).join(", ");
         notifyStudent(studentId, `Уведомление о пересдачах: ${subjects}`);
         setNotified(true);
         setTimeout(() => setNotified(false), 2500);
@@ -54,7 +56,7 @@ export default function RetakeStudentCard({ studentId, canNotify, onBack }: Reta
                 </div>
                 <div className="flex gap-2">
                     <div className="rounded-[12px] bg-white/15 px-4 py-1.5 text-center">
-                        <div className="text-xl font-bold text-white">{student.items.length}</div>
+                        <div className="text-xl font-bold text-white">{items.length}</div>
                         <div className="text-[10px] text-white/70">предметов</div>
                     </div>
                     <div className="rounded-[12px] bg-white/15 px-4 py-1.5 text-center">
@@ -65,9 +67,13 @@ export default function RetakeStudentCard({ studentId, canNotify, onBack }: Reta
             </div>
 
             <div className="space-y-2">
-                {student.items.map((item) => {
+                {items.map((item) => {
                     const isOpen = openSubject === item.subject;
                     const latest = item.attempts[item.attempts.length - 1]!;
+                    // "waiting" — авто-созданная попытка после провала (см. results-store);
+                    // своей отдельной стадии "назначить дату" у нас нет, поэтому
+                    // результат можно вносить сразу, как только попытка не завершена.
+                    const canAct = canRecordResult && (latest.result === "scheduled" || latest.result === "waiting");
                     return (
                         <div key={item.subject} className="overflow-hidden rounded-[14px] border border-border bg-white">
                             <div
@@ -77,6 +83,9 @@ export default function RetakeStudentCard({ studentId, canNotify, onBack }: Reta
                                 <div className="flex items-center gap-2.5">
                                     <span className="text-[13px] font-semibold text-auth-black">{item.subject}</span>
                                     <span className="rounded-[4px] bg-red-light px-2 py-0.5 text-[11px] font-semibold text-red">{item.score} б</span>
+                                    {item.expelled && (
+                                        <span className="rounded-full bg-red px-2.5 py-0.5 text-[11px] font-semibold text-white">Подлежит отчислению</span>
+                                    )}
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <span className="text-[11px] text-auth-gray">Попытка {latest.num} из 3</span>
@@ -93,6 +102,28 @@ export default function RetakeStudentCard({ studentId, canNotify, onBack }: Reta
                                             <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${RESULT_CLASS[a.result]}`}>{RESULT_LABEL[a.result]}</span>
                                         </div>
                                     ))}
+                                    {canAct && (
+                                        <div className="flex flex-wrap gap-1.5 pt-1.5">
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); recordResult(studentId, item.subject, "passed"); }}
+                                                className="rounded-[10px] bg-green px-3 py-1.5 text-[12px] font-semibold text-white transition-opacity hover:opacity-90"
+                                            >
+                                                ✓ Сдал
+                                            </button>
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); recordResult(studentId, item.subject, "failed"); }}
+                                                className="rounded-[10px] bg-red px-3 py-1.5 text-[12px] font-semibold text-white transition-opacity hover:opacity-90"
+                                            >
+                                                ✕ Не сдал
+                                            </button>
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); recordResult(studentId, item.subject, "no-show"); }}
+                                                className="rounded-[10px] border border-border bg-white px-3 py-1.5 text-[12px] font-semibold text-auth-black transition-colors hover:bg-gray-light"
+                                            >
+                                                ⦸ Не явился
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>

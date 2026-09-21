@@ -12,6 +12,8 @@ export interface RetakeItem {
     room: string;
     score: number;
     attempts: RetakeAttempt[];
+    // Ставится после 3-й неудачной попытки (см. results-store.recordResult).
+    expelled?: boolean;
 }
 
 export interface RetakeStudent {

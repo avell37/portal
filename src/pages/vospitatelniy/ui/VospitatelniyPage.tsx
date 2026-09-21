@@ -19,11 +19,17 @@ type TopTab = (typeof TOP_TABS)[number]['id']
 
 function GroupsSection() {
   const currentUser = useAuth((s) => s.currentUser)
-  // Куратор видит только свою группу (в демо-данных группа/куратор не
-  // привязаны к конкретному логину — берём первую, как и в исходном
-  // прототипе); директор и рук. воспитательного видят все группы.
   const canAll = currentUser?.role === 'director' || currentUser?.role === 'vospitatelny_head'
-  const [groupName, setGroupName] = useState<string | null>(canAll ? null : GROUPS[0]!.name)
+  // Куратор ведёт 1 или 2 группы (по curatorEmail в демо-данных) — при
+  // двух группах показываем переключатель, при одной — как раньше, сразу
+  // сводка без лишней навигации (см. portal_vospitatelniy.html, Схема 2.1).
+  const myGroups = useMemo(
+    () => (currentUser ? GROUPS.filter((g) => g.curatorEmail === currentUser.email) : []),
+    [currentUser],
+  )
+  const fallbackGroup = myGroups[0]?.name ?? GROUPS[0]!.name
+
+  const [groupName, setGroupName] = useState<string | null>(canAll ? null : fallbackGroup)
   const [studentId, setStudentId] = useState<number | null>(null)
 
   if (studentId !== null) {
@@ -31,12 +37,29 @@ function GroupsSection() {
   }
   if (groupName) {
     return (
-      <GroupView
-        groupName={groupName}
-        showBack={canAll}
-        onBack={() => setGroupName(null)}
-        onSelectStudent={setStudentId}
-      />
+      <div>
+        {!canAll && myGroups.length > 1 && (
+          <div className="mb-4 flex flex-wrap gap-2">
+            {myGroups.map((g) => (
+              <button
+                key={g.name}
+                onClick={() => setGroupName(g.name)}
+                className={`rounded-full px-3.5 py-1.5 text-[13px] font-semibold transition-colors ${
+                  groupName === g.name ? 'bg-auth-primary text-white' : 'bg-gray-light text-gray hover:opacity-80'
+                }`}
+              >
+                {g.name}
+              </button>
+            ))}
+          </div>
+        )}
+        <GroupView
+          groupName={groupName}
+          showBack={canAll}
+          onBack={() => setGroupName(null)}
+          onSelectStudent={setStudentId}
+        />
+      </div>
     )
   }
   return <GroupsList onSelectGroup={setGroupName} />

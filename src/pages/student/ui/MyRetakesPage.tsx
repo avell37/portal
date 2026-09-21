@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { CalendarClock, Bell, CalendarCheck } from 'lucide-react'
 import { useAuth } from '@/entities/session'
-import { findRetakeStudentByFullName } from '@/entities/retake'
+import { findRetakeStudentByFullName, useEffectiveItems } from '@/entities/retake'
 import RetakeStudentCard from '@/pages/uchebny/ui/RetakeStudentCard'
 import NearestRetakeCard from './NearestRetakeCard'
 import AllRetakesTable from './AllRetakesTable'
@@ -20,7 +20,7 @@ export default function MyRetakesPage() {
   const student = currentUser ? findRetakeStudentByFullName(currentUser.fullName) : undefined
   const [tab, setTab] = useState<TabId>('all')
 
-  const items = student?.items ?? []
+  const items = useEffectiveItems(student?.id ?? -1)
   const scheduled = items.filter((i) => latestAttempt(i).result === 'scheduled')
   const done = items.filter((i) => latestAttempt(i).result === 'passed')
   const nearestItem = findNearestItem(items)

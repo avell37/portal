@@ -25,6 +25,9 @@ export interface Student {
 export interface Group {
     name: string;
     curator: string;
+    // Демо-привязка группы к конкретному demo-логину куратора — реальной
+    // модели "у куратора N групп" в проекте нет, эмулируем на этом поле.
+    curatorEmail?: string;
 }
 
 export interface Talk {
