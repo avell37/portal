@@ -5,6 +5,7 @@ import { shortenPeriod } from '@/shared/lib/period'
 import { downloadCsv } from '@/shared/lib/csv'
 import { CONTINGENT, CONTINGENT_PERIODS, CURATOR_ZONES, CURATOR_ZONE_PERIODS, TEACHER_SOP, EMPLOYER_FEEDBACK, TEACHER_PERIOD_SUMMARY } from '@/entities/metrics'
 import { useTickets } from '@/entities/ticket'
+import CuratorActivityPanel from '@/pages/vospitatelniy/ui/CuratorActivityPanel'
 
 function OpenSectionLink({ to, label }: { to: string; label: string }) {
   return (
@@ -66,9 +67,18 @@ function round1(v: number) {
   return Math.round(v * 10) / 10
 }
 
+// "Текущий момент" — самый свежий период вообще, даже незавершённый (в
+// отличие от DEFAULT_PERIOD, который берёт последний период с ПОЛНЫМИ
+// данными); архив — всё, кроме текущего учебного года (последних двух
+// семестров), открывается отдельным действием, не в одном ряду с текущими.
+const LIVE_PERIOD = CONTINGENT_PERIODS[CONTINGENT_PERIODS.length - 1]!
+const CURRENT_YEAR_PERIODS = CONTINGENT_PERIODS.slice(-2)
+const ARCHIVE_PERIODS = CONTINGENT_PERIODS.slice(0, -2)
+
 export default function DirectorPage() {
   const [tab, setTab] = useState<TabId>('summary')
   const [period, setPeriod] = useState(DEFAULT_PERIOD)
+  const [showArchive, setShowArchive] = useState(false)
   const tickets = useTickets()
 
   const ticketTotals = useMemo(() => ({
@@ -86,6 +96,14 @@ export default function DirectorPage() {
       .sort((a, b) => b.count - a.count)
       .slice(0, 4)
   }, [tickets])
+
+  const ticketsByType = useMemo(
+    () => [
+      { label: 'Неисправность', value: tickets.filter((t) => t.type === 'Неисправность').length },
+      { label: 'Установка ПО', value: tickets.filter((t) => t.type === 'Установка ПО').length },
+    ],
+    [tickets],
+  )
 
   const contingentRows = useMemo(() => CONTINGENT.filter((r) => r.period === period), [period])
   const curatorRows = useMemo(() => CURATOR_ZONES.filter((r) => r.period === period), [period])
@@ -212,19 +230,53 @@ export default function DirectorPage() {
       <p className="mt-1 text-[14px] text-auth-gray">Сводная аналитика · Три отдела</p>
 
       <div className="mt-6">
-        <div className="mb-4 flex flex-wrap items-center gap-2 rounded-[14px] bg-auth-primary px-3.5 py-2.5">
-          <span className="text-[11px] font-semibold uppercase text-white/60">Период:</span>
-          {CONTINGENT_PERIODS.map((p) => (
+        <div className="mb-4 rounded-[14px] bg-auth-primary px-3.5 py-2.5">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[11px] font-semibold uppercase text-white/60">Период:</span>
             <button
-              key={p}
-              onClick={() => setPeriod(p)}
+              onClick={() => setPeriod(LIVE_PERIOD)}
               className={`rounded-full px-3 py-1 text-[12px] font-semibold transition-colors ${
-                period === p ? 'bg-white text-auth-primary' : 'border border-white/30 text-white hover:bg-white/10'
+                period === LIVE_PERIOD ? 'bg-white text-auth-primary' : 'border border-white/30 text-white hover:bg-white/10'
               }`}
             >
-              {p}
+              Текущий момент
             </button>
-          ))}
+            {CURRENT_YEAR_PERIODS.map((p) => (
+              <button
+                key={p}
+                onClick={() => setPeriod(p)}
+                className={`rounded-full px-3 py-1 text-[12px] font-semibold transition-colors ${
+                  period === p ? 'bg-white text-auth-primary' : 'border border-white/30 text-white hover:bg-white/10'
+                }`}
+              >
+                {p}
+              </button>
+            ))}
+            {ARCHIVE_PERIODS.length > 0 && (
+              <button
+                onClick={() => setShowArchive((v) => !v)}
+                className="rounded-full border border-white/30 px-3 py-1 text-[12px] font-semibold text-white transition-colors hover:bg-white/10"
+              >
+                Архив {showArchive ? '▴' : '▾'}
+              </button>
+            )}
+          </div>
+          {showArchive && ARCHIVE_PERIODS.length > 0 && (
+            <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-white/20 pt-2">
+              <span className="text-[11px] font-semibold uppercase text-white/60">Архив прошлых лет:</span>
+              {ARCHIVE_PERIODS.map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setPeriod(p)}
+                  className={`rounded-full px-3 py-1 text-[12px] font-semibold transition-colors ${
+                    period === p ? 'bg-white text-auth-primary' : 'border border-white/30 text-white hover:bg-white/10'
+                  }`}
+                >
+                  {p}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="mb-4 flex flex-wrap gap-2">
@@ -329,24 +381,28 @@ export default function DirectorPage() {
                   <thead>
                     <tr className="border-b border-border text-[11px] uppercase text-auth-gray">
                       <th className="px-4 py-3 font-semibold">Направление</th>
-                      <th className="px-3 py-3 font-semibold">Зона риска</th>
-                      <th className="px-3 py-3 font-semibold">Зона внимания</th>
-                      <th className="px-3 py-3 font-semibold">Зона развития</th>
+                      <th className="px-3 py-3 font-semibold">Ср. % выполнения</th>
+                      <th className="px-3 py-3 font-semibold">Красных</th>
+                      <th className="px-3 py-3 font-semibold">Эскалации</th>
                     </tr>
                   </thead>
                   <tbody>
                     {curatorByDirection.map((d) => (
                       <tr key={d.direction} className="border-b border-border last:border-none">
                         <td className="px-4 py-2.5 font-semibold text-auth-black">{d.direction}</td>
+                        <td className="px-3 py-2.5 text-green">{d.developmentPct}%</td>
                         <td className="px-3 py-2.5 text-red">{d.risk || '—'}</td>
-                        <td className="px-3 py-2.5 text-amber">{d.attention || '—'}</td>
-                        <td className="px-3 py-2.5 text-green">{d.development || '—'}</td>
+                        <td className="px-3 py-2.5 text-auth-gray">—</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
+                <div className="border-t border-border px-4 py-2 text-[11px] text-auth-gray">
+                  «Эскалации» по направлению — нет источника в реальных данных (только по кураторам, см. «Активность кураторов» выше)
+                </div>
               </div>
             )}
+            <CuratorActivityPanel />
             <PeriodComparison periods={CURATOR_ZONE_PERIODS} metrics={vospComparisonMetrics} />
             <div className="flex flex-wrap gap-2">
               <ExportButton label="Выгрузить в Excel" onClick={exportVosp} />
@@ -396,12 +452,19 @@ export default function DirectorPage() {
               <StatCard value={ticketTotals.done} label="Выполнено" color="var(--color-green)" />
               <StatCard value={ticketTotals.rejected} label="Отклонено" color="var(--color-red)" />
             </div>
-            <Panel title="Проблемные аудитории" titleColor="var(--color-amber)" bg="var(--color-amber-light)">
-              {roomsByTickets.map((r) => (
-                <PanelRow key={r.room} label={`Ауд. ${r.room}`} value={r.count} valueColor="var(--color-red)" />
-              ))}
-              {roomsByTickets.length === 0 && <PanelRow label="Нет данных" value="—" />}
-            </Panel>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <Panel title="По типу заявки" titleColor="var(--color-amber)" bg="var(--color-amber-light)">
+                {ticketsByType.map((r) => (
+                  <PanelRow key={r.label} label={r.label} value={r.value} valueColor="var(--color-blue)" />
+                ))}
+              </Panel>
+              <Panel title="Проблемные аудитории" titleColor="var(--color-amber)" bg="var(--color-amber-light)">
+                {roomsByTickets.map((r) => (
+                  <PanelRow key={r.room} label={`Ауд. ${r.room}`} value={r.count} valueColor="var(--color-red)" />
+                ))}
+                {roomsByTickets.length === 0 && <PanelRow label="Нет данных" value="—" />}
+              </Panel>
+            </div>
             <div className="flex flex-wrap gap-2">
               <ExportButton label="Выгрузить в Excel" onClick={exportIt} />
               <OpenSectionLink to="/it-support" label="Открыть IT-поддержку" />
